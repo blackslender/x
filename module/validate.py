@@ -15,9 +15,9 @@
 
 
 
-job_config = {'version': 1, 'source': {'table': 't3'}, 'target': {'table': 't1', 'operation': 'update', 'where_statement_on_table': 'tgt.c1 is not null', 'primary_key_column': ['pk1', 'pk2'], 'update_column' : ['c1', 'c2', 'c3'] }}
+job_config = {'version': 1, 'source': {'table': 't3'}, 'target': {'table': 't1', 'operation': 'update', 'where_statement_on_table': 'tgt.c1 is not null', 'primary_key_columnx': ['pk1', 'pk2'], 'update_column' : ['c1', 'c2', 'c3'] }}
 
-job_config = {'version': 1, 'source': {'table': 't3'}, 'target': {'table': 't1', 'operation': 'appendx' }}
+job_config = {'version': 1, 'source': {'table': 't3'}, 'target': {'table': 't1', 'operation': 'append' }}
 
 validate_job_config(job_config)
 
@@ -44,10 +44,11 @@ def pass_check_mandatory_param(job_config):
 def pass_check_target_table_exists(job_config):
     sql_string = ''' show create table {table_name} ; '''.format(table_name = job_config["target"]["table"])
     # wait for execute function from parent class
-    if execute(sql_string) != None:
-        return True
-    else:
-        return False
+    # if execute(sql_string) != None:
+    #     return True
+    # else:
+    #     return False
+    return True
 
 ## overwrite: none
 ## insert: none
@@ -74,7 +75,7 @@ def pass_check_columm_exist(column_list_job_config, column_list_actual_table):
 
 ### all check
 def validate_job_config(job_config):
-    if pass_check_mandatory_param(job_config) and pass_check_target_table_exists:
+    if pass_check_mandatory_param(job_config) and pass_check_target_table_exists(job_config):
         if job_config["target"]["operation"] in ["update", "upsert"]:
             if pass_check_mandatory_param_update_and_upsert(job_config):
             # check column exist -> pending
