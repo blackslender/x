@@ -2,30 +2,32 @@ from parent import DataLoader
 
 
 def generate_sql_condition_string(list_of_column, link_char_parameter):
-    if len(list_of_column) == 1:
-        sql_string = ''' tgt.{column} = src.{column} '''.format(
-            column=list_of_column[0])
-    else:
-        sql_string = ''' tgt.{column} = src.{column} '''.format(
-            column=list_of_column[0])
-        for i in range(len(list_of_column) - 1):
-            sql_string = sql_string + ''' {link_char} tgt.{column} = src.{column} '''.format(
-                link_char=link_char_parameter, column=list_of_column[i+1])
-    return sql_string
+    return (" " + link_char_parameter + " ").join(map(lambda x: "TGT.{} = SRC.{}".format(x, x), list_of_column))
+#     if len(list_of_column) == 1:
+#         sql_string = ''' tgt.{column} = src.{column} '''.format(
+#             column=list_of_column[0])
+#     else:
+#         sql_string = ''' tgt.{column} = src.{column} '''.format(
+#             column=list_of_column[0])
+#         for i in range(len(list_of_column) - 1):
+#             sql_string = sql_string + ''' {link_char} tgt.{column} = src.{column} '''.format(
+#                 link_char=link_char_parameter, column=list_of_column[i+1])
+#     return sql_string
 
 
 def generate_column_list_string(list_of_column, prefix):
-    if len(list_of_column) == 1:
-        sql_string = ''' {pf}.{column} '''.format(
-            column=list_of_column[0], pf=prefix)
-    else:
-        sql_string = ''' {pf}.{column} '''.format(
-            column=list_of_column[0], pf=prefix)
-        for i in range(len(list_of_column) - 1):
-            sql_string = sql_string + \
-                ''' , {pf}.{column}'''.format(
-                    column=list_of_column[i+1], pf=prefix)
-    return sql_string
+    return ", ".join(map(lambda x: "{}.{}".format(prefix, x), list_of_column))
+#     if len(list_of_column) == 1:
+#         sql_string = ''' {pf}.{column} '''.format(
+#             column=list_of_column[0], pf=prefix)
+#     else:
+#         sql_string = ''' {pf}.{column} '''.format(
+#             column=list_of_column[0], pf=prefix)
+#         for i in range(len(list_of_column) - 1):
+#             sql_string = sql_string + \
+#                 ''' , {pf}.{column}'''.format(
+#                     column=list_of_column[i+1], pf=prefix)
+#     return sql_string
 
 
 def update(job_config, temp_table):
