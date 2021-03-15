@@ -1,17 +1,15 @@
+from update_and_upsert import DataLoaderUpdate, DataLoaderUpsert
+from overwrite import DataLoaderOverwrite
+from append import DataLoaderAppend
+from pyspark.sql import functions as F, types as T
+import pyspark
 from functools import reduce
 import yaml
-# Due to offline-development, these libraries cannot be imported
-# import pyspark
-# from pyspark.sql import functions as F, types as T
-
-from append import DataLoaderAppend
-from overwrite import DataLoaderOverwrite
-from update_and_upsert import DataLoaderUpdate, DataLoaderUpsert
 
 
 class DataLoader:
 
-    _staging_table_name = "staging_TABLE"
+    _staging_table_name = "STAGING_TABLE"
 
     @staticmethod
     def init_dataloader(config_yaml_filepath, params={}):
@@ -70,12 +68,6 @@ class DataLoader:
         self.version = self.config["version"]
         self.params = params
 
-        # Create staging table if needed
-        if "create_staging_table" not in self.config["target"]:
-            self.config["target"]["create_staging_table"] = False
-        if self.config["target"]["create_staging_table"]:
-            self.create_staging_table()
-
     def __repr__(self):
         return str(self.config)
 
@@ -115,7 +107,7 @@ class DataLoader:
     def generate_job_full_script(self):
         """Generate the whole job's script"""
 
-        return ";\n".join(self.generate_pre_script(), self.generate_main_script(), self.generate_post_script())
+        return ";\n".join([self.generate_pre_script(), self.generate_main_script(), self.generate_post_script()])
 
     # Script executor
 
@@ -127,16 +119,16 @@ class DataLoader:
     def create_staging_table(self):
         """Fetch the source data and store into a table called 'pyzzle_staging_table'"""
 
-        (spark.sql(self.config["query"])
-                .write
-                .format("delta")
-                .mode("overwrite")
-                .saveAsTable(self._staging_table_name))
+        (self.execute_script(self.config["query"])
+         .write
+         .format("delta")
+         .mode("overwrite")
+         .saveAsTable(self._staging_table_name))
         raise self._staging_table_name
 
     def drop_staging_table(self):
         """Drop 'pyzzle_staging_table' table"""
-        return spark.sql("DROP TABLE " + self._staging_table_name)
+        return self.execute_script("DROP TABLE " + self._staging_table_name)
 
     def execute_pre_script(self):
         """Generate and execute the pre-script"""
@@ -152,6 +144,16 @@ class DataLoader:
 
     def run(self):
         """Execute the job"""
+
+        # Create staging table if needed
+        if "create_staging_table" not in self.config["target"]:
+            self.config["target"]["create_staging_table"] = False
+        if self.config["target"]["create_staging_table"]:
+            self.create_staging_table()
+
         self.execute_pre_script()
         self.execute_main_script()
         self.execute_post_script()
+
+        if self.config["target"]["create_staging_table"]:
+            self.drop_staging_table()
