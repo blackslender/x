@@ -1,21 +1,25 @@
-##################### test
-job_config = {'version': 1, 'source': {'table': 't3'}, 'target': {'table': 't1', 'operation': 'update', 'where_statement_on_table': 'tgt.c1 is not null', 'primary_key_columns': ['pk1', 'pk2'], 'update_columns' : ['c1', 'c2', 'c3'] }}
+from parent import DataLoader
 
-temp_table = None
-temp_table = 'x.None'
 
-append(job_config, temp_table)
-#####################
+class DataLoaderAppend(DataLoader):
 
-def append(job_config, temp_table):
-    main_sql = '''insert into {target_table} select * from ({source_table})'''
-    if temp_table != None:
-        source_table = temp_table
-    elif "table" in job_config["source"]:
-        source_table = job_config['source']['table']
-    else:
-        source_table = job_config['source']['query']
-    main_sql = main_sql.format(target_table = job_config['target']['table'], source_table = source_table)
-    print(main_sql)
-    return main_sql
+    def __init__(self, config, params={}):
+        super(DataLoaderAppend, self).__init__(config, params)
+        # # TODO
+        self.config = config
+        self.params = params
 
+        # Both 'insert' and 'append' operation are allowed
+        assert self.config["target"]["operation"] in [
+            "insert", "append"]
+
+    def generate_main_script(self):
+        main_sql = '''INSERT INTO {target} SELECT * FROM ({source_query})'''
+        if self.config["target"]["create_staging_table"]:
+            source_query = self._temp_table_name
+        else:
+            source_query = self.config['source']['query']
+        main_sql = main_sql.format(
+            target=self.config['target']['table'],
+            source_query=source_query)
+        return main_sql

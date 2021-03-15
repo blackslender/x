@@ -1,0 +1,6 @@
+version: 0
+source:
+  table: slide.f_booking_stg
+target:
+  table: adw.f_booking 
+  operation: append
