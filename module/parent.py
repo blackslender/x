@@ -1,10 +1,12 @@
-from update_and_upsert import DataLoaderUpdate, DataLoaderUpsert
-from overwrite import DataLoaderOverwrite
-from append import DataLoaderAppend
-from pyspark.sql import functions as F, types as T
-import pyspark
+# from .update_and_upsert import DataLoaderUpdate, DataLoaderUpsert
+# from .overwrite import DataLoaderOverwrite
+# from .append import DataLoaderAppend
+import module
+# from pyspark.sql import functions as F, types as T
+# import pyspark
 from functools import reduce
 import yaml
+import re
 
 
 class DataLoader:
@@ -12,12 +14,26 @@ class DataLoader:
     _staging_table_name = "STAGING_TABLE"
 
     @staticmethod
-    def init_dataloader(config_yaml_filepath, params={}):
-        with open("dummy.yaml", "r") as f:
+    def init_dataloader(config_yaml_filepath, spark=None, params={}):
+        if spark is None:
+            raise Exception(
+                "Please provide spark instance (spark=spark in Databricks)")
+        with open(config_yaml_filepath, "r") as f:
             raw_config = f.read()
             for key in params:
-                raw_config = raw_config.replace(key, params[key])
+                raw_config = raw_config.replace(f"${{{key}}}", params[key])
             config = yaml.safe_load(raw_config)
+
+        # Make sure that all parameters are provided
+        def get_required_params(text):
+            param_ex = r"\$\{[A-Za-z_]+[A-Za-z0-9_]*\}"
+            all_params = list(
+                map(lambda x: x[2:-1], re.findall(param_ex, text)))
+            return all_params
+
+        if len(get_required_params(config_yaml_filepath)) > 0:
+            raise Exception("All parameters should be provided. Please provide " +
+                            str(get_required_params(config_yaml_filepath)))
 
         # All config key should be lowercase
         for key in list(config.keys()):
@@ -44,18 +60,18 @@ class DataLoader:
 
         operation = config["target"]["operation"]
         if operation.lower() == "overwrite":
-            return DataLoaderOverwrite(config, params=params)
+            return module.DataLoaderOverwrite(config, spark=spark, params=params)
         if operation.lower() in ["append", "insert"]:
-            return DataLoaderAppend(config, params=params)
+            return module.DataLoaderAppend(config, spark=spark, params=params)
         elif operation.lower() == "update":
-            return DataLoaderUpdate(config, params=params)
+            return module.DataLoaderUpdate(config, spark=spark, params=params)
         elif operation.lower() == "upsert":
-            return DataLoaderUpsert(config, params=params)
+            return module.DataLoaderUpsert(config, spark=spark, params=params)
 
-    def __init__(self, config, params):
+    def __init__(self, config, spark=None, params={}):
         """
         DO NOT USE CONSTRUCTOR TO CREATE DATALOADER OBJECT. Instead, use static 'init_dataloader' as an object factory.
-        When overwriting this constructor, the parent constructor should be called as super(DataLoaderChildClass, self).__init__(config, params)
+        When overwriting this constructor, the parent constructor should be called as super(DataLoaderChildClass, self).\_\_init\_\_(config, spark, params)
 
         Parameters:
         - config: Dictionary of job config
@@ -66,7 +82,12 @@ class DataLoader:
 
         self.config = config
         self.version = self.config["version"]
+        self.spark = spark
         self.params = params
+
+        # If no create_staging_table option is provided, default is False (no creating)
+        if "create_staging_table" not in self.config["target"]:
+            self.config["target"]["create_staging_table"] = False
 
     def __repr__(self):
         return str(self.config)
@@ -110,11 +131,10 @@ class DataLoader:
         return ";\n".join([self.generate_pre_script(), self.generate_main_script(), self.generate_post_script()])
 
     # Script executor
-
     def execute_script(self, script):
         """Execute a script"""
         # It is the user that is responsible to validate the script
-        return spark.sql(script)
+        return self.spark.sql(script)
 
     def create_staging_table(self):
         """Fetch the source data and store into a table called 'pyzzle_staging_table'"""
@@ -146,8 +166,6 @@ class DataLoader:
         """Execute the job"""
 
         # Create staging table if needed
-        if "create_staging_table" not in self.config["target"]:
-            self.config["target"]["create_staging_table"] = False
         if self.config["target"]["create_staging_table"]:
             self.create_staging_table()
 
