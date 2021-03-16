@@ -4,7 +4,7 @@ import warnings
 
 class DataLoaderOverwrite(DataLoader):
 
-    def __init__(self, config, params={}):
+    def __init__(self, config, spark=None, params={}):
         super(DataLoaderOverwrite, self).__init__(config, params)
         assert self.config["target"]["operation"] == "overwrite"
 

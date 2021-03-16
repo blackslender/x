@@ -14,11 +14,11 @@ class DataLoader:
     _staging_table_name = "STAGING_TABLE"
 
     @staticmethod
-    def init_dataloader(config_yaml_filepath, spark_instance=None, params={}):
-        if spark_instance is None:
+    def init_dataloader(config_yaml_filepath, spark=None, params={}):
+        if spark is None:
             raise Exception(
-                "Please provide spark instance (spark_instance=spark in Databricks")
-        self.spark = spark_instance
+                "Please provide spark instance (spark=spark in Databricks)")
+
         with open(config_yaml_filepath, "r") as f:
             raw_config = f.read()
             for key in params:
@@ -61,15 +61,15 @@ class DataLoader:
 
         operation = config["target"]["operation"]
         if operation.lower() == "overwrite":
-            return module.DataLoaderOverwrite(config, params=params)
+            return module.DataLoaderOverwrite(config, spark=spark, params=params)
         if operation.lower() in ["append", "insert"]:
-            return module.DataLoaderAppend(config, params=params)
+            return module.DataLoaderAppend(config, spark=spark, params=params)
         elif operation.lower() == "update":
-            return module.DataLoaderUpdate(config, params=params)
+            return module.DataLoaderUpdate(config, spark=spark, params=params)
         elif operation.lower() == "upsert":
-            return module.DataLoaderUpsert(config, params=params)
+            return module.DataLoaderUpsert(config, spark=spark, params=params)
 
-    def __init__(self, config, params):
+    def __init__(self, config, spark=None, params={}):
         """
         DO NOT USE CONSTRUCTOR TO CREATE DATALOADER OBJECT. Instead, use static 'init_dataloader' as an object factory.
         When overwriting this constructor, the parent constructor should be called as super(DataLoaderChildClass, self).\_\_init\_\_(config, params)
@@ -83,6 +83,7 @@ class DataLoader:
 
         self.config = config
         self.version = self.config["version"]
+        self.spark = spark
         self.params = params
 
         # If no create_staging_table option is provided, default is False (no creating)

@@ -6,3 +6,4 @@ target:
   operation: overwrite
   create_staging_table: False
   pre_sql: select 1 as c1
+  

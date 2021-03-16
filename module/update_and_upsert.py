@@ -44,7 +44,7 @@ def upsert(job_config, staging_table):
 
 class DataLoaderUpdate(DataLoader):
 
-    def __init__(self, config, params={}):
+    def __init__(self, config, spark=None,  params={}):
         super(DataLoaderUpdate, self).__init__(config, params)
         # # TODO
         assert self.config["target"]["operation"] == "update"
@@ -57,7 +57,7 @@ class DataLoaderUpdate(DataLoader):
 
 class DataLoaderUpsert(DataLoader):
 
-    def __init__(self, config, params={}):
+    def __init__(self, config, spark=None, params={}):
         super(DataLoaderUpsert, self).__init__(config, params)
         # # TODO
         assert self.config["target"]["operation"] == "upsert"
