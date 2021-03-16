@@ -5,11 +5,13 @@ import warnings
 class DataLoaderOverwrite(DataLoader):
 
     def __init__(self, config, spark=None, params={}):
-        super(DataLoaderOverwrite, self).__init__(config, params)
+        super(DataLoaderOverwrite, self).__init__(
+            config, spark=spark, params=params)
         assert self.config["target"]["operation"] == "overwrite"
 
     def _get_target_table_partition_columns(self, table_name):
         try:
+            print(self.spark)
             return self.spark.sql("SHOW PARTITIONS " + table_name).columns
         except Exception as e:
             if "not partitioned" in str(e):

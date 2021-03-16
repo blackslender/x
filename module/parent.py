@@ -74,7 +74,7 @@ class DataLoader:
     def __init__(self, config, spark=None, params={}):
         """
         DO NOT USE CONSTRUCTOR TO CREATE DATALOADER OBJECT. Instead, use static 'init_dataloader' as an object factory.
-        When overwriting this constructor, the parent constructor should be called as super(DataLoaderChildClass, self).\_\_init\_\_(config, params)
+        When overwriting this constructor, the parent constructor should be called as super(DataLoaderChildClass, self).\_\_init\_\_(config, spark, params)
 
         Parameters:
         - config: Dictionary of job config
