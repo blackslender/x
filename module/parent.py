@@ -19,6 +19,8 @@ class DataLoader:
             raise Exception(
                 "Please provide spark instance (spark=spark in Databricks)")
 
+        print("DEBUG FLAG: spark: ", spark)
+        print("DEBUG FLAG: params: ", params)
         with open(config_yaml_filepath, "r") as f:
             raw_config = f.read()
             for key in params:
@@ -85,8 +87,6 @@ class DataLoader:
         self.version = self.config["version"]
         self.spark = spark
         self.params = params
-
-        print("DEBUG FLAG: spark: ", self.spark)
 
         # If no create_staging_table option is provided, default is False (no creating)
         if "create_staging_table" not in self.config["target"]:
