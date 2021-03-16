@@ -14,7 +14,11 @@ class DataLoader:
     _staging_table_name = "STAGING_TABLE"
 
     @staticmethod
-    def init_dataloader(config_yaml_filepath, params={}):
+    def init_dataloader(config_yaml_filepath, spark_instance=None, params={}):
+        if spark is None:
+            raise Exception(
+                "Please provide spark instance (spark_instance=spark in Databricks")
+        self.spark = spark
         with open(config_yaml_filepath, "r") as f:
             raw_config = f.read()
             for key in params:
@@ -132,7 +136,7 @@ class DataLoader:
     def execute_script(script):
         """Execute a script"""
         # It is the user that is responsible to validate the script
-        return spark.sql(script)
+        return self.spark.sql(script)
 
     def create_staging_table(self):
         """Fetch the source data and store into a table called 'pyzzle_staging_table'"""

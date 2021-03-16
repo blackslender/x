@@ -10,7 +10,7 @@ class DataLoaderOverwrite(DataLoader):
 
     def _get_target_table_partition_columns(self, table_name):
         try:
-            return spark.sql("SHOW PARTITIONS " + table_name).columns
+            return self.spark.sql("SHOW PARTITIONS " + table_name).columns
         except Exception as e:
             if "not partitioned" in str(e):
                 return []
@@ -19,9 +19,9 @@ class DataLoaderOverwrite(DataLoader):
 
     def _generate_key_matching_condition_string(self):
         if self.config["target"]["create_staging_table"]:
-            source_table = spark.table(self._staging_table_name)
+            source_table = self.spark.table(self._staging_table_name)
         else:
-            source_table = spark.sql(self.config["source"]["query"])
+            source_table = self.spark.sql(self.config["source"]["query"])
         partition_columns = self._get_target_table_partition_columns(
             self.config["target"]["table"])
         distinct_partition_values = list(map(lambda x: x.asDict(
@@ -56,9 +56,9 @@ PARTITION ON ({primary_key_columns})
         """Execute overwrite operation"""
         # return self.execute_script(self.generate_main_script())
         if self.config["target"]["create_staging_table"]:
-            source_table = spark.table(self._staging_table_name)
+            source_table = self.spark.table(self._staging_table_name)
         else:
-            source_table = spark.sql(self.config['source']['query'])
+            source_table = self.spark.sql(self.config['source']['query'])
         condition_string = self._generate_key_matching_condition_string()
         source_table.write\
             .format("delta") \
