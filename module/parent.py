@@ -131,9 +131,7 @@ class DataLoader:
         return ";\n".join([self.generate_pre_script(), self.generate_main_script(), self.generate_post_script()])
 
     # Script executor
-
-    @staticmethod
-    def execute_script(script):
+    def execute_script(self, script):
         """Execute a script"""
         # It is the user that is responsible to validate the script
         return self.spark.sql(script)
