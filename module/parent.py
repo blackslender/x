@@ -18,9 +18,6 @@ class DataLoader:
         if spark is None:
             raise Exception(
                 "Please provide spark instance (spark=spark in Databricks)")
-
-        print("DEBUG FLAG: spark: ", spark)
-        print("DEBUG FLAG: params: ", params)
         with open(config_yaml_filepath, "r") as f:
             raw_config = f.read()
             for key in params:
