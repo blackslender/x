@@ -1,46 +1,25 @@
-from parent import DataLoader
+from module import DataLoader
 
 
 def generate_sql_condition_string(list_of_column, link_char_parameter):
     return (" " + link_char_parameter + " ").join(map(lambda x: "TGT.{} = SRC.{}".format(x, x), list_of_column))
-#     if len(list_of_column) == 1:
-#         sql_string = ''' tgt.{column} = src.{column} '''.format(
-#             column=list_of_column[0])
-#     else:
-#         sql_string = ''' tgt.{column} = src.{column} '''.format(
-#             column=list_of_column[0])
-#         for i in range(len(list_of_column) - 1):
-#             sql_string = sql_string + ''' {link_char} tgt.{column} = src.{column} '''.format(
-#                 link_char=link_char_parameter, column=list_of_column[i+1])
-#     return sql_string
 
 
 def generate_column_list_string(list_of_column, prefix):
     return ", ".join(map(lambda x: "{}.{}".format(prefix, x), list_of_column))
-#     if len(list_of_column) == 1:
-#         sql_string = ''' {pf}.{column} '''.format(
-#             column=list_of_column[0], pf=prefix)
-#     else:
-#         sql_string = ''' {pf}.{column} '''.format(
-#             column=list_of_column[0], pf=prefix)
-#         for i in range(len(list_of_column) - 1):
-#             sql_string = sql_string + \
-#                 ''' , {pf}.{column}'''.format(
-#                     column=list_of_column[i+1], pf=prefix)
-#     return sql_string
 
 
-def update(job_config, temp_table):
-    part1_sql = '''merge into {target_table} as tgt using (select * from ({source_table})) as src on '''
-    part2_sql = job_config["target"]["where_statement_on_table"] + ' and '
+def update(job_config, staging_table):
+    part1_sql = '''MERGE INTO {target_table} AS TGT \nUSING (SELECT * FROM ({source_table})) AS SRC \nON '''
+    part2_sql = job_config["target"]["where_statement_on_table"] + ' AND '
     part3_sql = generate_sql_condition_string(
-        job_config['target']['primary_key_columns'], "and")
-    part4_sql = ''' when matched then update set '''
+        job_config['target']['primary_key_column'], "AND")
+    part4_sql = '''\nWHEN MATCHED THEN \n\tUPDATE SET '''
     part5_sql = generate_sql_condition_string(
-        job_config['target']['update_columns'], ",")
+        job_config['target']['update_column'], ",")
 
-    if temp_table != None:
-        source_table = temp_table
+    if staging_table != None:
+        source_table = staging_table
     elif "table" in job_config["source"]:
         source_table = job_config['source']['table']
     else:
@@ -53,11 +32,11 @@ def update(job_config, temp_table):
     return update_sql_string
 
 
-def upsert(job_config, temp_table):
-    update_sql_string = update(job_config, temp_table)
+def upsert(job_config, staging_table):
+    update_sql_string = update(job_config, staging_table)
 
-    insert_sql_string = ''' when not matched then insert ({str1}) values ({str2}) '''.format(str1=generate_column_list_string(
-        job_config["target"]["update_columns"], "tgt"), str2=generate_column_list_string(job_config["target"]["update_columns"], "src"))
+    insert_sql_string = '''\nWHEN NOT MATCHED THEN \n\tINSERT ({str1}) VALUES ({str2}) '''.format(str1=generate_column_list_string(
+        job_config["target"]["update_column"], "TGT"), str2=generate_column_list_string(job_config["target"]["update_column"], "SRC"))
     merge_sql_string = update_sql_string + insert_sql_string
     # print(merge_sql_string)
     return merge_sql_string
@@ -69,11 +48,11 @@ class DataLoaderUpdate(DataLoader):
         super(DataLoaderUpdate, self).__init__(config, params)
         # # TODO
         assert self.config["target"]["operation"] == "update"
-        assert "primary_key_columns" in self.config["target"]
-        assert "update_columns" in self.config["target"]
+        assert "primary_key_column" in self.config["target"]
+        assert "update_column" in self.config["target"]
 
     def generate_main_script(self):
-        return update(self.config, self._temp_table_name if self.config["target"]["create_staging_table"] else None)
+        return update(self.config, self._staging_table_name if self.config["target"]["create_staging_table"] else None)
 
 
 class DataLoaderUpsert(DataLoader):
@@ -82,8 +61,8 @@ class DataLoaderUpsert(DataLoader):
         super(DataLoaderUpsert, self).__init__(config, params)
         # # TODO
         assert self.config["target"]["operation"] == "upsert"
-        assert "primary_key_columns" in self.config["target"]
-        assert "update_columns" in self.config["target"]
+        assert "primary_key_column" in self.config["target"]
+        assert "update_column" in self.config["target"]
 
     def generate_main_script(self):
-        return upsert(self.config, self._temp_table_name if self.config["target"]["create_staging_table"] else None)
+        return upsert(self.config, self._staging_table_name if self.config["target"]["create_staging_table"] else None)

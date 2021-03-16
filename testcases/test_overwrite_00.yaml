@@ -1,0 +1,8 @@
+version: 1
+source:
+  query: select * from slide.f_booking_stg where ctry = '${ctry_name}' and city = '${city_name}'
+target:
+  table: adw.f_booking 
+  operation: overwrite
+  create_staging_table: False
+  pre_sql: select 1 as c1
