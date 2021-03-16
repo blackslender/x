@@ -8,13 +8,34 @@ class DataLoaderOverwrite(DataLoader):
         super(DataLoaderOverwrite, self).__init__(config, params)
         assert self.config["target"]["operation"] == "overwrite"
 
+    def _get_target_table_partition_columns(self, table_name):
+        try:
+            return spark.sql("SHOW PARTITIONS " + table_name).columns
+        except:
+            return []
+
+    def _generate_key_matching_condition_string(self):
+        if self.config["target"]["create_staging_table"]:
+            source_table = spark.table(self._staging_table_name)
+        else:
+            source_table = spark.sql(self.config["source"]["query"])
+        partition_columns = self._get_target_table_partition_columns(
+            self.config["target"]["table"])
+        distinct_partition_values = list(map(lambda x: x.asDict(
+        ), source_table.select(*partition_columns).distinct().collect()))
+        condition_string = " OR ".join(map(lambda row: "(" + " AND ".join(map(
+            lambda key: "{key} = '{value}'".format(key=key, value=row[key]), row)) + ")", distinct_partition_values))
+        if condition_string == "":
+            condition_string = "1=1"
+        return condition_string
+
     def generate_main_script(self):
         warnings.warn(
             "OVERWRITE operation has not been supported yet. This query is for reference purpose only")
         main_sql = '''
 INSERT OVERWRITE {target}
 SELECT * FROM ({source_query})
-REPLACE WHERE ({replace_where})
+PARTITION ON ({primary_key_columns})
 '''
         if self.config["target"]["create_staging_table"]:
             source_query = self._staging_table_name
@@ -23,8 +44,8 @@ REPLACE WHERE ({replace_where})
         main_sql = main_sql.format(
             target=self.config['target']['table'],
             source_query=source_query,
-            replace_where=self.config["target"]["where_statement_on_table"] if "where_statement_on_table" in self.config["target"] else "1=1"
-        )
+            primary_key_columns=str(self._get_target_table_partition_columns(
+                self.config["target"]["table"])))
         return main_sql
 
     # Since overwrite per partition is not yet supported, this is implemented using pyspark syntax
@@ -35,17 +56,7 @@ REPLACE WHERE ({replace_where})
             source_table = spark.table(self._staging_table_name)
         else:
             source_table = spark.sql(self.config['source']['query'])
-
-        target_table = spark.table(self.config["target"]["table"])
-        partition_columns = spark.sql(
-            "SHOW PARTITIONS {}".format(self.config["target"]["table"]))
-        distinct_partition_values = list(map(lambda x: x.asDict(
-        ), source_table.select(*partition_columns).distinct().collect()))
-        condition_string = " OR ".join(map(lambda row: "(" + " AND ".join(map(
-            lambda key: "{key} = '{value}'".format(key=key, value=row[key]), row)) + ")", distinct_partition_values))
-        if condition_string == "":
-            condition_string = "1=1"
-
+        condition_string = self._generate_key_matching_condition_string()
         source_table.write\
             .format("delta") \
             .mode("overwrite") \
