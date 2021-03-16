@@ -15,10 +15,10 @@ class DataLoader:
 
     @staticmethod
     def init_dataloader(config_yaml_filepath, spark_instance=None, params={}):
-        if spark is None:
+        if spark_instance is None:
             raise Exception(
                 "Please provide spark instance (spark_instance=spark in Databricks")
-        self.spark = spark
+        self.spark = spark_instance
         with open(config_yaml_filepath, "r") as f:
             raw_config = f.read()
             for key in params:
