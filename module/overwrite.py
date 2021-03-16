@@ -11,7 +11,6 @@ class DataLoaderOverwrite(DataLoader):
 
     def _get_target_table_partition_columns(self, table_name):
         try:
-            print(self.spark)
             return self.spark.sql("SHOW PARTITIONS " + table_name).columns
         except Exception as e:
             if "not partitioned" in str(e):
