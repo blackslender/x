@@ -81,6 +81,10 @@ class DataLoader:
         self.version = self.config["version"]
         self.params = params
 
+        # If no create_staging_table option is provided, default is False (no creating)
+        if "create_staging_table" not in self.config["target"]:
+            self.config["target"]["create_staging_table"] = False
+
     def __repr__(self):
         return str(self.config)
 
@@ -159,8 +163,6 @@ class DataLoader:
         """Execute the job"""
 
         # Create staging table if needed
-        if "create_staging_table" not in self.config["target"]:
-            self.config["target"]["create_staging_table"] = False
         if self.config["target"]["create_staging_table"]:
             self.create_staging_table()
 

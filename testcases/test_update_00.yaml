@@ -1,0 +1,15 @@
+version: 1
+source:
+  table: slide.f_booking_stg
+target:
+  table: adw.f_booking 
+  operation: update
+  where_statement_on_table: date > current_date() - 7
+  primary_key_column: 
+    - booking_id
+    - date
+  update_column:
+    - fare
+    - passenger_id
+    - country_id
+  pre_sql: select 1 as c1
