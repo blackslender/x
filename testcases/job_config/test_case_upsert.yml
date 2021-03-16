@@ -1,0 +1,17 @@
+
+version: 0
+source:
+  query: select *, null as c5, null as c6 from default.source_table
+target:
+  table: default.target_table
+  operation: upsert
+  primary_key_column: 
+    - pk1
+    - pk2
+    - pk3
+  update_column:
+    - c1
+    - c2
+    - c3
+    - c4
+  
