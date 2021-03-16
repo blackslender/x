@@ -15,9 +15,6 @@ class DataLoader:
 
     @staticmethod
     def init_dataloader(config_yaml_filepath, spark=None, params={}):
-        print(config_yaml_filepath)
-        print(spark)
-        print(params)
         if spark is None:
             raise Exception(
                 "Please provide spark instance (spark=spark in Databricks)")
@@ -88,6 +85,8 @@ class DataLoader:
         self.version = self.config["version"]
         self.spark = spark
         self.params = params
+
+        print("DEBUG FLAG: spark: ", self.spark)
 
         # If no create_staging_table option is provided, default is False (no creating)
         if "create_staging_table" not in self.config["target"]:
