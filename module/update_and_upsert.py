@@ -10,6 +10,8 @@ def generate_column_list_string(list_of_column, prefix):
 
 
 def update(job_config, staging_table):
+    if "where_statement_on_table" not in job_config["target"]:
+        job_config["target"]["where_statement_on_table"] = "1=1"
     part1_sql = '''MERGE INTO {target_table} AS TGT \nUSING (SELECT * FROM ({source_table})) AS SRC \nON '''
     part2_sql = job_config["target"]["where_statement_on_table"] + ' AND '
     part3_sql = generate_sql_condition_string(
