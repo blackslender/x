@@ -11,8 +11,11 @@ class DataLoaderOverwrite(DataLoader):
     def _get_target_table_partition_columns(self, table_name):
         try:
             return spark.sql("SHOW PARTITIONS " + table_name).columns
-        except:
-            return []
+        except Exception as e:
+            if "not partitioned" in str(e):
+                return []
+            else:
+                raise e
 
     def _generate_key_matching_condition_string(self):
         if self.config["target"]["create_staging_table"]:
