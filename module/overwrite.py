@@ -11,7 +11,7 @@ class DataLoaderOverwrite(DataLoader):
 
     def _get_target_table_partition_columns(self, table_name):
         try:
-            return self.spark.sql("SHOW PARTITIONS " + table_name).columns
+            return self.execute_script("SHOW PARTITIONS " + table_name).columns
         except Exception as e:
             if "not partitioned" in str(e):
                 return []
@@ -22,7 +22,7 @@ class DataLoaderOverwrite(DataLoader):
         if self.config["target"]["create_staging_table"]:
             source_table = self.spark.table(self._staging_table_name)
         else:
-            source_table = self.spark.sql(self.config["source"]["query"])
+            source_table = self.execute_script(self.config["source"]["query"])
         partition_columns = self._get_target_table_partition_columns(
             self.config["target"]["table"])
         distinct_partition_values = list(map(lambda x: x.asDict(
@@ -59,7 +59,7 @@ PARTITION ON ({primary_key_columns})
         if self.config["target"]["create_staging_table"]:
             source_table = self.spark.table(self._staging_table_name)
         else:
-            source_table = self.spark.sql(self.config['source']['query'])
+            source_table = self.execute_script(self.config['source']['query'])
         condition_string = self._generate_key_matching_condition_string()
         source_table.write\
             .format("delta") \
