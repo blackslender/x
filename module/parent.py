@@ -128,7 +128,8 @@ class DataLoader:
 
     # Script executor
 
-    def execute_script(self, script):
+    @staticmethod
+    def execute_script(script):
         """Execute a script"""
         # It is the user that is responsible to validate the script
         return spark.sql(script)
