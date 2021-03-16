@@ -4,7 +4,7 @@ from module import DataLoader
 class DataLoaderAppend(DataLoader):
 
     def __init__(self, config, spark=None, params={}):
-        super(DataLoaderAppend, self)..__init__(
+        super(DataLoaderAppend, self).__init__(
             config, spark=spark, params=params)
 
         # Both 'insert' and 'append' operation are allowed
