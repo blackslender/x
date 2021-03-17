@@ -69,7 +69,7 @@ class DataLoader:
             return module.DataLoaderUpsert(config, spark=spark, params=params)
 
     def __init__(self, config, spark=None, params={}):
-        """
+        r"""
         DO NOT USE CONSTRUCTOR TO CREATE DATALOADER OBJECT. Instead, use static 'init_dataloader' as an object factory.
         When overwriting this constructor, the parent constructor should be called as super(DataLoaderChildClass, self).\_\_init\_\_(config, spark, params)
 
@@ -88,6 +88,11 @@ class DataLoader:
         # If no create_staging_table option is provided, default is False (no creating)
         if "create_staging_table" not in self.config["target"]:
             self.config["target"]["create_staging_table"] = False
+
+        module.JobConfigValidator(self, print_log=False).validate_all()
+
+    def validate(self):
+        return module.JobConfigValidator(self, print_log=True).validate_all()
 
     def __repr__(self):
         return str(self.config)

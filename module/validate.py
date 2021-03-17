@@ -101,6 +101,10 @@ class JobConfigValidator:
         raise NotImplementedError
 
     def check_mandatory_param(self, job_config=None, raise_exception=False):
+        '''
+        Parameters:
+            - job_config: dict of config object. If no config is provided, use the dataloader's config as default
+        '''
         job_config = job_config or self.dataloader.config
         required_keys = [
             "source",
@@ -114,7 +118,7 @@ class JobConfigValidator:
         if job_config["target"]["operation"] not in ("insert", "append", "update", "overwrite", "upsert"):
             if raise_exception:
                 raise JobConfigException(
-                    "Operation {} is not valid. The allowed operations are 'insert' or 'append', 'update', 'overwrite', 'upsert'".format(job_config["target"]["operation"]))
+                    "Operation {} is not valid. The allowed operations are 'insert'/'append', 'update', 'overwrite', 'upsert'".format(job_config["target"]["operation"]))
             else:
                 return False
         return True
