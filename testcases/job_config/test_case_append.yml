@@ -1,0 +1,6 @@
+version: 0
+source:
+  query: select *, null as c5, null as c6 from default.source_table
+target:
+  table: default.target_table
+  operation: append
