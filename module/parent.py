@@ -89,7 +89,8 @@ class DataLoader:
         if "create_staging_table" not in self.config["target"]:
             self.config["target"]["create_staging_table"] = False
 
-        module.JobConfigValidator(self, print_log=False).validate_all()
+        module.JobConfigValidator(
+            self, print_log=False).validate_all(raise_exception=True)
 
     def validate(self):
         return module.JobConfigValidator(self, print_log=True).validate_all()
