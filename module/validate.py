@@ -52,7 +52,7 @@ class JobConfigValidator:
         - job_config: dict of config object. If no job_config is provided, use the dataloader's config as default
         '''
         job_config = job_config or self.dataloader.config
-        missing_keys = list(filter(lambda x: self.check_config_key(
+        missing_keys = list(filter(lambda x: not self.check_config_key(
             x, raise_exception=False), key_list))
 
         if len(missing_keys) > 0:
