@@ -111,7 +111,6 @@ class DataLoader:
         else:
             return "SELECT 1 as c1"
         return pre_sql
-    # TODO: Tach 4 phuong thuc ra file khac
 
     def generate_main_script(self):
         """Generate and return main script"""
@@ -139,15 +138,14 @@ class DataLoader:
     def create_staging_table(self):
         """Fetch the source data and store into a table called 'pyzzle_staging_table'"""
 
-        (self.execute_script(self.config["query"])
-         .write
-         .format("delta")
-         .mode("overwrite")
-         .saveAsTable(self._staging_table_name))
-        raise self._staging_table_name
+        return self.execute_script(self.config["source"]["query"])\
+            .write \
+            .format("delta") \
+            .mode("overwrite") \
+            .saveAsTable(self._staging_table_name)
 
     def drop_staging_table(self):
-        """Drop 'pyzzle_staging_table' table"""
+        """Drop staging table"""
         return self.execute_script("DROP TABLE " + self._staging_table_name)
 
     def execute_pre_script(self):
