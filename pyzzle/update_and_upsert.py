@@ -1,4 +1,4 @@
-from module import DataLoader
+from pyzzle import DataLoader
 
 
 def generate_sql_condition_string(list_of_column, link_char_parameter):

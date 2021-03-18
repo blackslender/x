@@ -1,7 +1,7 @@
 # from .update_and_upsert import DataLoaderUpdate, DataLoaderUpsert
 # from .overwrite import DataLoaderOverwrite
 # from .append import DataLoaderAppend
-import module
+import pyzzle
 # from pyspark.sql import functions as F, types as T
 # import pyspark
 from functools import reduce
@@ -60,13 +60,13 @@ class DataLoader:
 
         operation = config["target"]["operation"]
         if operation.lower() == "overwrite":
-            return module.DataLoaderOverwrite(config, spark=spark, params=params)
+            return pyzzle.DataLoaderOverwrite(config, spark=spark, params=params)
         if operation.lower() in ["append", "insert"]:
-            return module.DataLoaderAppend(config, spark=spark, params=params)
+            return pyzzle.DataLoaderAppend(config, spark=spark, params=params)
         elif operation.lower() == "update":
-            return module.DataLoaderUpdate(config, spark=spark, params=params)
+            return pyzzle.DataLoaderUpdate(config, spark=spark, params=params)
         elif operation.lower() == "upsert":
-            return module.DataLoaderUpsert(config, spark=spark, params=params)
+            return pyzzle.DataLoaderUpsert(config, spark=spark, params=params)
 
     def __init__(self, config, spark=None, params={}):
         r"""
@@ -89,11 +89,11 @@ class DataLoader:
         if "create_staging_table" not in self.config["target"]:
             self.config["target"]["create_staging_table"] = False
 
-        module.JobConfigValidator(
+        pyzzle.JobConfigValidator(
             self, print_log=False).validate_all(raise_exception=True)
 
     def validate(self):
-        return module.JobConfigValidator(self, print_log=True).validate_all()
+        return pyzzle.JobConfigValidator(self, print_log=True).validate_all()
 
     def __repr__(self):
         return str(self.config)

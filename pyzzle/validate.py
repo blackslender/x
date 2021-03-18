@@ -1,5 +1,5 @@
 from functools import reduce
-import module
+import pyzzle
 
 
 class JobConfigException(Exception):
@@ -9,7 +9,7 @@ class JobConfigException(Exception):
 class JobConfigValidator:
 
     def __init__(self, dataloader, print_log=True):
-        assert isinstance(dataloader, module.DataLoader)
+        assert isinstance(dataloader, pyzzle.DataLoader)
         self.dataloader = dataloader
 
         if print_log:

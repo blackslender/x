@@ -1,4 +1,4 @@
-from module import DataLoader
+from pyzzle import DataLoader
 
 
 class DataLoaderAppend(DataLoader):
