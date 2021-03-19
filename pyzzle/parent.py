@@ -157,12 +157,8 @@ DROP TABLE IF EXISTS {staging_table};
             return self.spark.sql(script)
         else:
             # If a multi-statement script is provided, return the result of last statement.
-            result = list(
-                filter(
-                    lambda x: x is not None,
-                    map(
-                        lambda x: (self.spark.sql(x.strip()) if x <> "" else None),
-                        script.split(";")))[-1])
+            statements = filter(lambda x: x <> "", map(lambda x: x.strip(), script.split(";")))
+            return = list(map(lambda x: self.spark.sql(x)))[-1]
 
     # def create_staging_table(self):
     #     """Fetch the source data and store into a table called 'pyzzle_staging_table'"""
