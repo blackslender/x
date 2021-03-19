@@ -114,7 +114,10 @@ class DataLoader:
 DROP TABLE IF EXISTS {staging_table};
 CREATE TABLE {staging_table} USING DELTA AS
 SELECT * FROM (\n{source_query}n)
-            """
+            """.format(
+                staging_table=self._staging_table_name,
+                source_query=self.config["source"]["query"]
+            )
         return pre_sql
 
     def generate_main_script(self):
@@ -136,7 +139,7 @@ SELECT * FROM (\n{source_query}n)
         if self.config["target"]["create_staging_table"]:
             post_sql += """
 DROP TABLE IF EXISTS {staging_table};
-            """
+            """.format(staging_table=self._staging_table_name)
         return post_sql
 
     def generate_job_full_script(self):
