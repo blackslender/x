@@ -144,7 +144,8 @@ DROP TABLE IF EXISTS {staging_table};
 
     def generate_job_full_script(self):
         """Generate the whole job's script"""
-        return ";\n".join([self.generate_pre_script(), self.generate_main_script(), self.generate_post_script()])
+        return ";\n".join([self.generate_pre_script(), self.generate_main_script(), self.generate_post_script()])\
+            .replace("SELECT 1 as c1;", "")  # Remove dummy query so the code shall be clean
 
     # Script executor
     def execute_script(self, script):
