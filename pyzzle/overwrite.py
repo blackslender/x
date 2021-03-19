@@ -28,9 +28,9 @@ class DataLoaderOverwrite(DataLoader):
         distinct_partition_values = list(map(lambda x: x.asDict(
         ), source_table.select(*partition_columns).distinct().collect()))
         condition_string = " OR ".join(map(lambda row: "(" + " AND ".join(map(
-            lambda key: "{key} = '{value}'".format(key=key, value=row[key]), row)) + ")", distinct_partition_values))
-        if condition_string == "":
-            condition_string = "1=1"
+            lambda key: "{key} = '{value}'".format(key=key, value=row[key]), row)) + ")" if len(row) > 0 else " 1=1 ", distinct_partition_values))
+        if condition_string == "()":
+            condition_string = " 1=1 "
         return condition_string
 
     def generate_main_script(self):
