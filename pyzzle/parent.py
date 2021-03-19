@@ -107,13 +107,13 @@ class DataLoader:
         if "pre_sql" in self.config["target"]:
             pre_sql += self.config["target"]["pre_sql"]
         else:
-            pre_sql += "SELECT 1 as c1"
+            pre_sql += "SELECT 1 as c1;"
 
         if self.config["target"]["create_staging_table"]:
             pre_sql += """
 DROP TABLE IF EXISTS {staging_table};
 CREATE TABLE {staging_table} USING DELTA AS
-SELECT * FROM (\n{source_query}n)
+SELECT * FROM (\n{source_query}\n)
             """.format(
                 staging_table=self._staging_table_name,
                 source_query=self.config["source"]["query"]
