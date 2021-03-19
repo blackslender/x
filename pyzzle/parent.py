@@ -150,7 +150,11 @@ DROP TABLE IF EXISTS {staging_table};
     def execute_script(self, script):
         """Execute a script"""
         # It is the user that is responsible to validate the script
-        return self.spark.sql(script)
+        if ";" not in script:
+            return self.spark.sql(script)
+        else:
+            # If a multi-statement script is provided, return the result of last statement.
+            return list(map(lambda x: self.spark.sql(x), script.split(";")))[-1]
 
     def create_staging_table(self):
         """Fetch the source data and store into a table called 'pyzzle_staging_table'"""
