@@ -134,7 +134,7 @@ SELECT * FROM (\n{source_query}\n)
         if "post_sql" in self.config["target"]:
             post_sql += self.config["target"]["post_sql"]
         else:
-            post_sql += "SELECT 1 as c1"
+            post_sql += "SELECT 1 as c1;"
 
         if self.config["target"]["create_staging_table"]:
             post_sql += """
@@ -159,7 +159,7 @@ DROP TABLE IF EXISTS {staging_table};
             # If a multi-statement script is provided, return the result of last statement.
             statements = filter(
                 lambda x: x != "", map(
-                lambda x: x.strip(), script.split(";")))
+                    lambda x: x.strip(), script.split(";")))
 
             return list(map(lambda x: self.spark.sql(x), statements))[-1]
 
