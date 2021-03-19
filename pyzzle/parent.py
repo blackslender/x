@@ -161,7 +161,7 @@ DROP TABLE IF EXISTS {staging_table};
                 filter(
                     lambda x: x is not None,
                     map(
-                        lambda x: self.spark.sql(x.strip()) if x <> "" else None,
+                        lambda x: (self.spark.sql(x.strip()) if x <> "" else None),
                         script.split(";")))[-1])
 
     # def create_staging_table(self):
