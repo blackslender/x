@@ -156,18 +156,18 @@ DROP TABLE IF EXISTS {staging_table};
             # If a multi-statement script is provided, return the result of last statement.
             return list(map(lambda x: self.spark.sql(x), script.split(";")))[-1]
 
-    def create_staging_table(self):
-        """Fetch the source data and store into a table called 'pyzzle_staging_table'"""
+    # def create_staging_table(self):
+    #     """Fetch the source data and store into a table called 'pyzzle_staging_table'"""
 
-        return self.execute_script(self.config["source"]["query"])\
-            .write \
-            .format("delta") \
-            .mode("overwrite") \
-            .saveAsTable(self._staging_table_name)
+    #     return self.execute_script(self.config["source"]["query"])\
+    #         .write \
+    #         .format("delta") \
+    #         .mode("overwrite") \
+    #         .saveAsTable(self._staging_table_name)
 
-    def drop_staging_table(self):
-        """Drop staging table"""
-        return self.execute_script("DROP TABLE " + self._staging_table_name)
+    # def drop_staging_table(self):
+    #     """Drop staging table"""
+    #     return self.execute_script("DROP TABLE " + self._staging_table_name)
 
     def execute_pre_script(self):
         """Generate and execute the pre-script"""
