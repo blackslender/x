@@ -134,7 +134,7 @@ class JobConfigValidator:
                 table_name=job_config["target"]["table"]))
             return True
         except Exception as e:
-            if "not found in database" in str(e):
+            if "not found" in str(e):
                 if raise_exception:
                     raise JobConfigException("Table {} does not exists. Please check the configuration.".format(
                         job_config["target"]["table"]))
