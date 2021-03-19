@@ -100,7 +100,7 @@ class DataLoader:
 
     # Script generator
 
-    def generate_pre_script(self):
+    def generate_support_script(self, support_type):
         """Generate and return pre-script"""
         # Pre-script includes:
         # - Truncate table if needed
@@ -110,13 +110,15 @@ class DataLoader:
         # If no pre-script is required, this should return "select 1" as a dummy query
 
         # Default behaviour: return dummy script
+        system_type = support_type["system_type"]
+        script_type = support_type["script_type"]
         pre_sql = ""
 
-        if "pre_sql" in self.config["target"]:
-            return self.config["target"]["pre_sql"]
+        if script_type in self.config.get(system_type):
+            return " ; ".join(self.config.get(system_type).get(script_type))
         else:
             return "SELECT 1 as c1"
-        return pre_sql
+        return support_sql
 
     def generate_main_script(self):
         """Generate and return main script"""
@@ -154,9 +156,21 @@ class DataLoader:
         """Drop staging table"""
         return self.execute_script("DROP TABLE " + self._staging_table_name)
 
-    def execute_pre_script(self):
+    def execute_source_pre_script(self):
         """Generate and execute the pre-script"""
-        return self.execute_script(self.generate_pre_script())
+        return self.execute_script(self.generate_support_script({ "system_type":"source", "script_type":"pre_sql" }))
+
+    def execute_source_post_script(self):
+        """Generate and execute the pre-script"""
+        return self.execute_script(self.generate_support_script({ "system_type":"source", "script_type":"post_sql" }))
+
+    def execute_target_pre_script(self):
+        """Generate and execute the pre-script"""
+        return self.execute_script(self.generate_support_script({ "system_type":"target", "script_type":"pre_sql" }))
+
+    def execute_target_post_script(self):
+        """Generate and execute the pre-script"""
+        return self.execute_script(self.generate_support_script({ "system_type":"target", "script_type":"post_sql" }))
 
     def execute_main_script(self):
         """Generate and execute the main script"""
@@ -169,13 +183,14 @@ class DataLoader:
     def run(self):
         """Execute the job"""
 
+        self.execute_source_pre_script()
         # Create staging table if needed
         if self.config["target"]["create_staging_table"]:
             self.create_staging_table()
-
-        self.execute_pre_script()
+        self.execute_source_post_script()
+        self.execute_target_pre_script()
         self.execute_main_script()
-        self.execute_post_script()
+        self.execute_target_post_script()
 
         if self.config["target"]["create_staging_table"]:
             self.drop_staging_table()

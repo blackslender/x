@@ -23,8 +23,12 @@ class DataLoaderOverwrite(DataLoader):
             source_table = self.spark.table(self._staging_table_name)
         else:
             source_table = self.execute_script(self.config["source"]["query"])
-        partition_columns = self._get_target_table_partition_columns(
-            self.config["target"]["table"])
+
+        if self.config["target"]["partition_column"]:
+            partition_columns = self.config["target"]["partition_column"]
+        else:
+            partition_columns = self._get_target_table_partition_columns(self.config["target"]["table"])
+
         distinct_partition_values = list(map(lambda x: x.asDict(
         ), source_table.select(*partition_columns).distinct().collect()))
         condition_string = " OR ".join(map(lambda row: "(" + " AND ".join(map(

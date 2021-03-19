@@ -4,3 +4,6 @@ source:
 target:
   table: default.target_table
   operation: overwrite
+  partition_column:
+    - pk1
+    - pk2

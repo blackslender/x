@@ -1,0 +1,46 @@
+
+version: 0
+source:
+  query: |-
+    select *, null as c5, null as c6 
+      from default.source_table
+    where 1=1  
+       --okey
+
+
+
+  columns:
+    - v1: '1'
+    - c2: '2'
+    - c3: '4'
+  pre_sql:
+    - select 1 as c1;
+    - select 1 as c1;
+    - select 1 as c1;       
+  post_sql:
+    - select 1 as c1
+    - select 1 as c1;
+    - select 1 as c1;       
+
+target:
+  table: default.target_table
+  operation: upsert
+  create_staging_table: True
+  primary_key_column: 
+    - pk1
+    - pk2
+    - pk3
+  update_column:
+    - c1
+    - c2
+    - c3
+    - c4
+  pre_sql:
+    - select 1 as c1;
+    - select 1 as c1;
+    - select 1 as c1;       
+  post_sql:
+    - select 1 as c1
+    - select 1 as c1;
+    - select 1 as c1;       
+  
