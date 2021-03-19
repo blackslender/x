@@ -26,6 +26,8 @@ class DataLoaderOverwrite(DataLoader):
 
         if self.config["target"]["partition_column"]:
             partition_columns = self.config["target"]["partition_column"]
+            if partition_columns == None:
+                partition_columns = []
         else:
             partition_columns = self._get_target_table_partition_columns(self.config["target"]["table"])
 
