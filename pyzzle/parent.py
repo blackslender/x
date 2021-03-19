@@ -176,14 +176,6 @@ DROP TABLE IF EXISTS {staging_table};
 
     def run(self):
         """Execute the job"""
-
-        # Create staging table if needed
-        if self.config["target"]["create_staging_table"]:
-            self.create_staging_table()
-
         self.execute_pre_script()
         self.execute_main_script()
         self.execute_post_script()
-
-        if self.config["target"]["create_staging_table"]:
-            self.drop_staging_table()
