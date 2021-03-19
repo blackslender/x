@@ -102,20 +102,19 @@ class DataLoader:
 
     def generate_pre_script(self):
         """Generate and return pre-script"""
-        # Pre-script includes:
-        # - Truncate table if needed
-        # - "Delete where" clause if needed
-        # - Create staging table if needed
-        # - User's pre-script if provided
-        # If no pre-script is required, this should return "select 1" as a dummy query
-
-        # Default behaviour: return dummy script
         pre_sql = ""
 
         if "pre_sql" in self.config["target"]:
-            return self.config["target"]["pre_sql"]
+            pre_sql += self.config["target"]["pre_sql"]
         else:
-            return "SELECT 1 as c1"
+            pre_sql += "SELECT 1 as c1"
+
+        if self.config["target"]["create_staging_table"]:
+            pre_sql += """
+DROP TABLE IF EXISTS {staging_table};
+CREATE TABLE {staging_table} USING DELTA AS
+SELECT * FROM (\n{source_query}n)
+            """
         return pre_sql
 
     def generate_main_script(self):
@@ -127,12 +126,21 @@ class DataLoader:
     def generate_post_script(self):
         """Generate and return post script"""
 
-        # Default behaviour: return dummy script
-        return "SELECT 1 as c1"
+        post_sql = ""
+
+        if "post_sql" in self.config["target"]:
+            post_sql += self.config["target"]["post_sql"]
+        else:
+            post_sql += "SELECT 1 as c1"
+
+        if self.config["target"]["create_staging_table"]:
+            post_sql += """
+DROP TABLE IF EXISTS {staging_table};
+            """
+        return post_sql
 
     def generate_job_full_script(self):
         """Generate the whole job's script"""
-
         return ";\n".join([self.generate_pre_script(), self.generate_main_script(), self.generate_post_script()])
 
     # Script executor
