@@ -57,6 +57,19 @@ class DataLoaderUpdate(DataLoader):
     def generate_main_script(self):
         return update(self.config, self._staging_table_name if self.config["target"]["create_staging_table"] else None)
 
+    def step_06_operate(self, generate_sql=False):
+        if "table" in self.config["target"]:
+            target_table = self.config["target"]["table"]
+        elif "path" in self.config["target"]:
+            target_table = "delta.`{}`".format(target_table)
+
+        script = ""
+        # TODO
+        if generate_sql:
+            return script
+        else:
+            return self.execute_script(script)
+
 
 class DataLoaderUpsert(DataLoader):
 
@@ -68,5 +81,15 @@ class DataLoaderUpsert(DataLoader):
         assert "primary_key_column" in self.config["target"]
         assert "update_column" in self.config["target"]
 
-    def generate_main_script(self):
-        return upsert(self.config, self._staging_table_name if self.config["target"]["create_staging_table"] else None)
+    def step_06_operate(self, generate_sql=False):
+        if "table" in self.config["target"]:
+            target_table = self.config["target"]["table"]
+        elif "path" in self.config["target"]:
+            target_table = "delta.`{}`".format(target_table)
+
+        script = ""
+        # TODO
+        if generate_sql:
+            return script
+        else:
+            return self.execute_script(script)

@@ -1,9 +1,4 @@
-# from .update_and_upsert import DataLoaderUpdate, DataLoaderUpsert
-# from .overwrite import DataLoaderOverwrite
-# from .append import DataLoaderAppend
 import pyzzle
-# from pyspark.sql import functions as F, types as T
-# import pyspark
 from functools import reduce
 import yaml
 import re
@@ -40,7 +35,11 @@ class DataLoader:
         for key in list(config.keys()):
             config[key.lower()] = config[key]
 
-        operation = config["target"]["operation"]
+        try:
+            operation = config["target"]["operation"]
+        except KeyError as e:
+            raise KeyError("The target - operation key is required for a job.")
+
         if operation.lower() == "overwrite":
             return pyzzle.DataLoaderOverwrite(config, spark=spark, params=params)
         if operation.lower() in ["append", "insert"]:
@@ -69,10 +68,6 @@ class DataLoader:
         self.spark = spark
         self.params = params
 
-        # If no create_staging_table option is provided, default is False (no creating)
-        if "create_staging_table" not in self.config["target"]:
-            self.config["target"]["create_staging_table"] = False
-
         pyzzle.JobConfigValidator(
             self, print_log=False).validate_all(raise_exception=True)
 
@@ -82,60 +77,11 @@ class DataLoader:
     def __repr__(self):
         return str(self.config)
 
-    # Script generator
-
-    def generate_pre_script(self):
-        """Generate and return pre-script"""
-        pre_sql = ""
-
-        if "pre_sql" in self.config["target"]:
-            pre_sql += self.config["target"]["pre_sql"]
-        else:
-            pre_sql += "SELECT 1 as c1;"
-
-        if self.config["target"]["create_staging_table"]:
-            pre_sql += """
-DROP TABLE IF EXISTS {staging_table};
-CREATE TABLE {staging_table} USING DELTA AS
-SELECT * FROM (\n{source_query}\n)
-            """.format(
-                staging_table=self._staging_table_name,
-                source_query=self.config["source"]["query"]
-            )
-        return pre_sql
-
-    def generate_main_script(self):
-        """Generate and return main script"""
-        # This method is abstract and required to be re-implemented
-
-        raise NotImplementedError
-
-    def generate_post_script(self):
-        """Generate and return post script"""
-
-        post_sql = ""
-
-        if "post_sql" in self.config["target"]:
-            post_sql += self.config["target"]["post_sql"]
-        else:
-            post_sql += "SELECT 1 as c1;"
-
-        if self.config["target"]["create_staging_table"]:
-            post_sql += """
-DROP TABLE IF EXISTS {staging_table};
-            """.format(staging_table=self._staging_table_name)
-        return post_sql
-
-    def generate_job_full_script(self):
-        """Generate the whole job's script"""
-        return ";\n".join([self.generate_pre_script(), self.generate_main_script(), self.generate_post_script()])\
-            .replace("SELECT 1 as c1;", "")  # Remove dummy query so the code shall be clean
-
     # Script executor
+
     def execute_script(self, script):
         """Execute a script"""
-        # It is the user that is responsible to validate the script
-
+        # Users are responsible to validate the script
         script = script.replace("\n", " ")
 
         if ";" not in script:
@@ -148,33 +94,122 @@ DROP TABLE IF EXISTS {staging_table};
 
             return list(map(lambda x: self.spark.sql(x), statements))[-1]
 
-    # def create_staging_table(self):
-    #     """Fetch the source data and store into a table called 'pyzzle_staging_table'"""
+    def step_01_source_pre_sql(self, generate_sql=False):
+        if "pre_sql" not in self.config["source"]:
+            script = ""
+        else:
+            script = self.config["source"]["pre_sql"]
+        if generate_sql:
+            return script
+        else:
+            return self.execute_script(script)
 
-    #     return self.execute_script(self.config["source"]["query"])\
-    #         .write \
-    #         .format("delta") \
-    #         .mode("overwrite") \
-    #         .saveAsTable(self._staging_table_name)
+    def step_02_create_reference_views(self, generate_sql=False):
+        """ Create temp views related to reference table paths from source config
+        Parameters:
+            + paths: dictionary of (view_name, table path)
+            + generate_sql: bool. If False: execute creating the view, else return the sql script only (no execution).
+        Return: dictionary of (view_name, dataframe) if generate_sql=True else str - the script"""
 
-    # def drop_staging_table(self):
-    #     """Drop staging table"""
-    #     return self.execute_script("DROP TABLE " + self._staging_table_name)
+        def create_view_ddl(view_name, path):
+            return "CREATE OR REPLACE TEMPORARY VIEW {} AS SELECT * FROM delta.`{}`;".format(view_name, path)
 
-    def execute_pre_script(self):
-        """Generate and execute the pre-script"""
-        return self.execute_script(self.generate_pre_script())
+        if "reference_table_path" not in self.config["source"]:
+            script = ""
+        else:
+            script = ";\n".join(
+                map(create_view_ddl, self.config["source"]["reference_table_path"]))
 
-    def execute_main_script(self):
-        """Generate and execute the main script"""
-        return self.execute_script(self.generate_main_script())
+        if generate_sql:
+            return script
+        else:
+            return self.execute_script(script)
 
-    def execute_post_script(self):
-        """Generate and execute the main script"""
-        return self.execute_script(self.generate_post_script())
+    def step_03_create_source_view(self, generate_sql=False):
+        script = "CREATE OR REPLACE TEMPORARY VIEW __source_view AS \n {}".format(
+            self.config["source"]["query"])
+
+        if generate_sql:
+            return script
+        else:
+            return self.execute_script(script)
+
+    def step_04_source_post_sql(self, generate_sql=False):
+        if "post_sql" not in self.config["source"]:
+            script = ""
+        else:
+            script = self.config["source"]["post_sql"]
+        if generate_sql:
+            return script
+        else:
+            return self.execute_script(script)
+
+    def step_05_target_pre_sql(self, generate_sql=False):
+        if "pre_sql" not in self.config["target"]:
+            script = ""
+        else:
+            script = self.config["target"]["pre_sql"]
+        if generate_sql:
+            return script
+        else:
+            return self.execute_script(script)
+
+    def step_06_operate(self, generate_sql=False):
+        # TODO
+        raise NotImplementedError
+
+    def step_07_target_post_sql(self, generate_sql=False):
+        if "post_sql" not in self.config["target"]:
+            script = ""
+        else:
+            script = self.config["target"]["post_sql"]
+        if generate_sql:
+            return script
+        else:
+            return self.execute_script(script)
+
+    def step_08_clean(self, generate_sql=False):
+        # There is no need to remove temp views since they belong to a single session only.
+        return
+
+    def generate_full_sql(self):
+        """Generate job full sql"""
+        # Changed on 24-03: job flow now contains
+        #  + source pre-sql
+        #  + script to create temp view to referenced tables
+        #  + script to create create temp view related to source query
+        #  + source post-sql
+        #  + target pre-sql
+        #  + operation happens
+        #  + target post-sql
+        #  + clean up: temp tables, temp views, etc
+        script = ";\n\n".join([
+            self.step_01_source_pre_sql(generate_sql=True),
+            self.step_02_create_reference_views(generate_sql=True),
+            self.step_03_create_source_view(generate_sql=True),
+            self.step_04_source_post_sql(generate_sql=True),
+            self.step_05_target_pre_sql(generate_sql=True),
+            self.step_06_operate(generate_sql=True),
+            self.step_07_target_post_sql(generate_sql=True),
+            self.step_08_clean(generate_sql=True)
+        ])
 
     def run(self):
-        """Execute the job"""
-        self.execute_pre_script()
-        self.execute_main_script()
-        self.execute_post_script()
+        """Execute the whole job"""
+        # Changed on 24-03: job flow now contains
+        #  + source pre-sql
+        #  + script to create temp view to referenced tables
+        #  + script to create create temp view related to source query
+        #  + source post-sql
+        #  + target pre-sql
+        #  + operation happens
+        #  + target post-sql
+        #  + clean up: temp tables, temp views, etc
+        self.step_01_source_pre_sql(generate_sql=False)
+        self.step_02_create_reference_views(generate_sql=False)
+        self.step_03_create_source_view(generate_sql=False)
+        self.step_04_source_post_sql(generate_sql=False)
+        self.step_05_target_pre_sql(generate_sql=False)
+        self.step_06_operate(generate_sql=False)
+        self.step_07_target_post_sql(generate_sql=False)
+        self.step_08_clean(generate_sql=False)

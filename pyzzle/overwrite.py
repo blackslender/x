@@ -67,9 +67,15 @@ PARTITION ON ({primary_key_columns})
             .option("replaceWhere", condition_string) \
             .saveAsTable(self.config["target"]["table"])
 
+    def step_06_operate(self, generate_sql=False):
+        if "table" in self.config["target"]:
+            target_table = self.config["target"]["table"]
+        elif "path" in self.config["target"]:
+            target_table = "delta.`{}`".format(target_table)
 
-# Get partition columns
-# If no partition: Overwrite all
-# else:
-#   Generate select distinct from source table on partition columns
-#   Overwrite the distinct values selected on partition columns
+        script = ""
+        # TODO
+        if generate_sql:
+            return script
+        else:
+            return self.execute_script(script)

@@ -1,0 +1,36 @@
+version: 0
+source:
+  pre_sql:
+    - SELECT 1 AS C1
+  post_sql:
+    - SELECT 1 AS C1
+  reference_table_path:
+    source_table1: /mnt/adls2/default/source_table1
+    source_table2: /mnt/adls2/default/source_table2
+    source_table3: /mnt/adls2/default/source_table3
+    ${source_table_name} : ${path_name}
+  query: |-
+    select *, null as c5, null as c6 
+    from source_table1 
+    join source_table2 
+    join source_table3
+target:
+  path: /mnt/adls2/default/target_table
+  operation: update
+  primary_key_column: 
+    - pk1
+    - pk2
+    - pk3
+  update_column:
+    - c1
+    - c2
+    - c3
+    - c4
+  pre_sql:
+    - select 1 as c1
+    - select 1 as c1
+    - select 1 as c1
+  post_sql:
+    - select 1 as c1
+    - select 1 as c1
+    - select 1 as c1 
