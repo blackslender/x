@@ -17,7 +17,8 @@ class DataLoader:
     def init_dataloader(config_yaml_filepath, spark=None, params={}):
         if spark is None:
             raise Exception(
-                "Please provide spark instance (spark=spark in Databricks)")
+                "Please provide spark instance (provide spark=spark in Databricks)")
+
         with open(config_yaml_filepath, "r") as f:
             raw_config = f.read()
             for key in params:
@@ -39,25 +40,6 @@ class DataLoader:
         for key in list(config.keys()):
             config[key.lower()] = config[key]
 
-        # Config validation: TODO
-        # From "source", there should be only one subkey in "table" or "query".
-        assert "source" in config
-        assert len(config["source"]) == 1
-        # If the source data is in table, convert it to query
-        if "table" in config["source"]:
-            config["source"]["query"] = "SELECT * FROM {}".format(
-                config["source"]["table"])
-        assert "query" in config["source"]
-
-        assert "target" in config
-        # From "target", these are required:
-
-        # - "table"
-        assert "table" in config["target"]
-        # - "operation"
-        assert "operation" in config["target"]
-        # TODO: Make other validations here
-
         operation = config["target"]["operation"]
         if operation.lower() == "overwrite":
             return pyzzle.DataLoaderOverwrite(config, spark=spark, params=params)
@@ -67,6 +49,8 @@ class DataLoader:
             return pyzzle.DataLoaderUpdate(config, spark=spark, params=params)
         elif operation.lower() == "upsert":
             return pyzzle.DataLoaderUpsert(config, spark=spark, params=params)
+        else:
+            raise ValueError("Unexpected oparation '%s'" % operation)
 
     def __init__(self, config, spark=None, params={}):
         r"""
