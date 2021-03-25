@@ -184,7 +184,7 @@ class DataLoader:
         #  + operation happens
         #  + target post-sql
         #  + clean up: temp tables, temp views, etc
-        script = ";\n\n".join([
+        return ";\n\n".join([
             self.step_01_source_pre_sql(generate_sql=True),
             self.step_02_create_reference_views(generate_sql=True),
             self.step_03_create_source_view(generate_sql=True),
