@@ -19,10 +19,7 @@ class DataLoaderOverwrite(DataLoader):
                 raise e
 
     def _generate_key_matching_condition_string(self):
-        if self.config["target"]["create_staging_table"]:
-            source_table = self.spark.table(self._staging_table_name)
-        else:
-            source_table = self.execute_script(self.config["source"]["query"])
+        source_table = self.execute_script("SELECT  * FROM __source_view")
         partition_columns = self._get_target_table_partition_columns(
             self.config["target"]["table"])
         distinct_partition_values = list(map(lambda x: x.asDict(
@@ -33,49 +30,31 @@ class DataLoaderOverwrite(DataLoader):
             condition_string = " 1=1 "
         return condition_string
 
-    def generate_main_script(self):
-        warnings.warn(
-            "OVERWRITE operation has not been supported yet. This query is for reference purpose only")
-        main_sql = '''
-INSERT OVERWRITE {target}
-SELECT * FROM ({source_query})
-PARTITION ON ({primary_key_columns})
-'''
-        if self.config["target"]["create_staging_table"]:
-            source_query = self._staging_table_name
-        else:
-            source_query = self.config['source']['query']
-        main_sql = main_sql.format(
-            target=self.config['target']['table'],
-            source_query=source_query,
-            primary_key_columns=str(self._get_target_table_partition_columns(
-                self.config["target"]["table"])))
-        return main_sql
-
-    # Since overwrite per partition is not yet supported, this is implemented using pyspark syntax
-    def execute_main_script(self):
-        """Execute overwrite operation"""
-        # return self.execute_script(self.generate_main_script())
-        if self.config["target"]["create_staging_table"]:
-            source_table = self.spark.table(self._staging_table_name)
-        else:
-            source_table = self.execute_script(self.config['source']['query'])
-        condition_string = self._generate_key_matching_condition_string()
-        source_table.write\
-            .format("delta") \
-            .mode("overwrite") \
-            .option("replaceWhere", condition_string) \
-            .saveAsTable(self.config["target"]["table"])
-
     def step_06_operate(self, generate_sql=False):
         if "table" in self.config["target"]:
             target_table = self.config["target"]["table"]
         elif "path" in self.config["target"]:
             target_table = "delta.`{}`".format(target_table)
-
-        script = ""
-        # TODO
-        if generate_sql:
-            return script
         else:
-            return self.execute_script(script)
+            raise KeyError(
+                "Either 'table' or 'path' key should appear in target config.")
+
+        if generate_sql:
+            partition_cols = self._get_target_table_partition_columns(
+                target_table)
+            script = [
+                "-- OVERWRITE operation is not supported in Databricks SQL. These query are for reference only."]
+            script = [
+                "INSERT OVERWRITE {target_table} PARTITION BY ({partition_cols}) SELECT * FROM __source_view".format(
+                    target_table=target_table,
+                    partition_cols=", ".join(partition_cols)
+                )
+            ]
+            return "\n".join(script)
+        else:
+            condition_string = self._generate_key_matching_condition_string()
+            source_table.write\
+                .format("delta") \
+                .mode("overwrite") \
+                .option("replaceWhere", condition_string) \
+                .saveAsTable(self.config["target"]["table"])

@@ -9,7 +9,7 @@ def generate_column_list_string(list_of_column, prefix):
     return ", ".join(map(lambda x: "{}.{}".format(prefix, x), list_of_column))
 
 
-def update(job_config, staging_table):
+def update(job_config):
     if "where_statement_on_table" not in job_config["target"]:
         job_config["target"]["where_statement_on_table"] = "1=1"
     part1_sql = '''MERGE INTO {target_table} AS TGT \nUSING (SELECT * FROM ({source_table})) AS SRC \nON '''
@@ -20,12 +20,7 @@ def update(job_config, staging_table):
     part5_sql = generate_sql_condition_string(
         job_config['target']['update_column'], ",")
 
-    if staging_table != None:
-        source_table = staging_table
-    elif "table" in job_config["source"]:
-        source_table = job_config['source']['table']
-    else:
-        source_table = job_config['source']['query']
+    source_table = "__source_view"
 
     part1_sql = part1_sql.format(
         target_table=job_config['target']['table'], source_table=source_table)
@@ -34,8 +29,8 @@ def update(job_config, staging_table):
     return update_sql_string
 
 
-def upsert(job_config, staging_table):
-    update_sql_string = update(job_config, staging_table)
+def upsert(job_config):
+    update_sql_string = update(job_config)
 
     insert_sql_string = '''\nWHEN NOT MATCHED THEN \n\tINSERT ({str1}) VALUES ({str2}) '''.format(str1=generate_column_list_string(
         job_config["target"]["update_column"], "TGT"), str2=generate_column_list_string(job_config["target"]["update_column"], "SRC"))
@@ -54,17 +49,13 @@ class DataLoaderUpdate(DataLoader):
         assert "primary_key_column" in self.config["target"]
         assert "update_column" in self.config["target"]
 
-    def generate_main_script(self):
-        return update(self.config, self._staging_table_name if self.config["target"]["create_staging_table"] else None)
-
     def step_06_operate(self, generate_sql=False):
         if "table" in self.config["target"]:
             target_table = self.config["target"]["table"]
         elif "path" in self.config["target"]:
             target_table = "delta.`{}`".format(target_table)
 
-        script = ""
-        # TODO
+        script = update(self.config)
         if generate_sql:
             return script
         else:
@@ -87,7 +78,7 @@ class DataLoaderUpsert(DataLoader):
         elif "path" in self.config["target"]:
             target_table = "delta.`{}`".format(target_table)
 
-        script = ""
+        script = upsert(self.config)
         # TODO
         if generate_sql:
             return script

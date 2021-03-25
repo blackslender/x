@@ -11,18 +11,6 @@ class DataLoaderAppend(DataLoader):
         assert self.config["target"]["operation"] in [
             "insert", "append"]
 
-    # def generate_main_script(self):
-    #     """ THIS METHOD IS DEPRECATED"""
-    #     main_sql = '''INSERT INTO {target} SELECT * FROM ({source_query})'''
-    #     if self.config["target"]["create_staging_table"]:
-    #         source_query = self._staging_table_name
-    #     else:
-    #         source_query = self.config['source']['query']
-    #     main_sql = main_sql.format(
-    #         target=self.config['target']['table'],
-    #         source_query=source_query)
-    #     return main_sql
-
     def step_06_operate(self, generate_sql=False):
         if "table" in self.config["target"]:
             target_table = self.config["target"]["table"]

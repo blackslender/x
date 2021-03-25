@@ -6,8 +6,6 @@ import re
 
 class DataLoader:
 
-    _staging_table_name = "STAGING_TABLE"
-
     @staticmethod
     def init_dataloader(config_yaml_filepath, spark=None, params={}):
         if spark is None:
