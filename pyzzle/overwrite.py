@@ -52,6 +52,7 @@ class DataLoaderOverwrite(DataLoader):
             ]
             return "\n".join(script)
         else:
+            source_table = self.execute_script("SELECT * FROM __source_view")
             condition_string = self._generate_key_matching_condition_string()
             source_table.write\
                 .format("delta") \
