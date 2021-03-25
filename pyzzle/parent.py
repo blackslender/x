@@ -114,14 +114,25 @@ class DataLoader:
             + generate_sql: bool. If False: execute creating the view, else return the sql script only (no execution).
         Return: dictionary of (view_name, dataframe) if generate_sql=True else str - the script"""
 
-        def create_view_ddl(view_name, path):
+        def create_view_ddl(args):
+            view_name, path = args
             return "CREATE OR REPLACE TEMPORARY VIEW {} AS SELECT * FROM delta.`{}`;".format(view_name, path)
+
 
         if "reference_table_path" not in self.config["source"]:
             script = ""
         else:
+            if isinstance(self.config["source"]["reference_table_path"], list):
+                r = dict()
+                for subdict in self.config["source"]["reference_table_path"]):
+                    r = {**r, **subdict}
+                self.config["source"]["reference_table_path"]) = r
+            
             script = ";\n".join(
-                map(create_view_ddl, self.config["source"]["reference_table_path"]))
+                map(
+                    create_view_ddl, 
+                    self.config["source"]["reference_table_path"]).items
+                    )
 
         if generate_sql:
             return script

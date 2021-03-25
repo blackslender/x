@@ -109,11 +109,15 @@ class JobConfigValidator:
         required_keys = [
             "source",
             "target",
-            ["target", "table"],
             ["target", "operation"]
         ]
         if not self.check_multiple_config_keys(required_keys, job_config=job_config, raise_exception=raise_exception):
             return False
+
+        # Added on 25/3: Target now can be table or path
+        if not ("path" in job_config["target"] or "table" in job_config["target"]):
+            raise JobConfigException(
+                "Either 'table' or 'path' config should be provided in the job target config")
 
         if job_config["target"]["operation"] not in ("insert", "append", "update", "overwrite", "upsert"):
             if raise_exception:
