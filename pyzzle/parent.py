@@ -184,7 +184,8 @@ class DataLoader:
         #  + operation happens
         #  + target post-sql
         #  + clean up: temp tables, temp views, etc
-        return ";\n\n".join([
+
+        scripts = [
             self.step_01_source_pre_sql(generate_sql=True),
             self.step_02_create_reference_views(generate_sql=True),
             self.step_03_create_source_view(generate_sql=True),
@@ -193,7 +194,8 @@ class DataLoader:
             self.step_06_operate(generate_sql=True),
             self.step_07_target_post_sql(generate_sql=True),
             self.step_08_clean(generate_sql=True)
-        ])
+        ]
+        return ";\n\n".join(filter(lambda x: x != "", scripts))
 
     def run(self):
         """Execute the whole job"""
