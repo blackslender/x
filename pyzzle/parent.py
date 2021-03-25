@@ -168,7 +168,10 @@ class DataLoader:
 
     def step_08_clean(self, generate_sql=False):
         # There is no need to remove temp views since they belong to a single session only.
-        return
+        if generate_sql:
+            return ""
+        else:
+            return None
 
     def generate_full_sql(self):
         """Generate job full sql"""
