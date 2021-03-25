@@ -79,7 +79,6 @@ class DataLoaderUpsert(DataLoader):
             target_table = "delta.`{}`".format(target_table)
 
         script = upsert(self.config)
-        # TODO
         if generate_sql:
             return script
         else:
