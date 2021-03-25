@@ -10,9 +10,17 @@ def generate_column_list_string(list_of_column, prefix):
 
 
 def update(job_config):
+
+    if "table" in job_config["target"]:
+        target_table = job_config["target"]["table"]
+    else:
+        target_table = "delta.`{}`".format(job_config["target"]["path"])
+
     if "where_statement_on_table" not in job_config["target"]:
         job_config["target"]["where_statement_on_table"] = "1=1"
-    part1_sql = '''MERGE INTO {target_table} AS TGT \nUSING (SELECT * FROM ({source_table})) AS SRC \nON '''
+    part0_sql = '''CREATE OR REPLACE TEMPORARY VIEW __target_view AS TABLE {target_table};\n'''.format(
+        target_table)
+    part1_sql = '''MERGE INTO __temp_view AS TGT \nUSING (SELECT * FROM ({source_table})) AS SRC \nON '''
     part2_sql = job_config["target"]["where_statement_on_table"] + ' AND '
     part3_sql = generate_sql_condition_string(
         job_config['target']['primary_key_column'], "AND")
@@ -22,8 +30,7 @@ def update(job_config):
 
     source_table = "__source_view"
 
-    part1_sql = part1_sql.format(
-        target_table=job_config['target']['table'], source_table=source_table)
+    part1_sql = part1_sql.format(source_table=source_table)
     update_sql_string = part1_sql + part2_sql + part3_sql + part4_sql + part5_sql
     # print(update_sql_string)
     return update_sql_string
