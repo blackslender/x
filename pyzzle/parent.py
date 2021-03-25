@@ -79,9 +79,11 @@ class DataLoader:
 
     def execute_script(self, script):
         """Execute a script"""
+
         # Users are responsible to validate the script
         script = script.replace("\n", " ")
-
+        if script.replace(" ", "") == "":
+            return None
         if ";" not in script:
             return self.spark.sql(script)
         else:
@@ -97,6 +99,7 @@ class DataLoader:
             script = ""
         else:
             script = self.config["source"]["pre_sql"]
+
         if generate_sql:
             return script
         else:
