@@ -118,19 +118,18 @@ class DataLoader:
             view_name, path = args
             return "CREATE OR REPLACE TEMPORARY VIEW {} AS SELECT * FROM delta.`{}`;".format(view_name, path)
 
-
         if "reference_table_path" not in self.config["source"]:
             script = ""
         else:
             if isinstance(self.config["source"]["reference_table_path"], list):
                 r = dict()
-                for subdict in self.config["source"]["reference_table_path"]):
+                for subdict in self.config["source"]["reference_table_path"]:
                     r = {**r, **subdict}
-                self.config["source"]["reference_table_path"]) = r
-            
-            script = ";\n".join(
+                self.config["source"]["reference_table_path"])=r
+
+            script=";\n".join(
                 map(
-                    create_view_ddl, 
+                    create_view_ddl,
                     self.config["source"]["reference_table_path"]).items
                     )
 
@@ -139,8 +138,8 @@ class DataLoader:
         else:
             return self.execute_script(script)
 
-    def step_03_create_source_view(self, generate_sql=False):
-        script = "CREATE OR REPLACE TEMPORARY VIEW __source_view AS \n {}".format(
+    def step_03_create_source_view(self, generate_sql = False):
+        script="CREATE OR REPLACE TEMPORARY VIEW __source_view AS \n {}".format(
             self.config["source"]["query"])
 
         if generate_sql:
@@ -148,41 +147,41 @@ class DataLoader:
         else:
             return self.execute_script(script)
 
-    def step_04_source_post_sql(self, generate_sql=False):
+    def step_04_source_post_sql(self, generate_sql = False):
         if "post_sql" not in self.config["source"]:
-            script = ""
+            script=""
         else:
-            script = self.config["source"]["post_sql"]
+            script=self.config["source"]["post_sql"]
         if generate_sql:
             return script
         else:
             return self.execute_script(script)
 
-    def step_05_target_pre_sql(self, generate_sql=False):
+    def step_05_target_pre_sql(self, generate_sql = False):
         if "pre_sql" not in self.config["target"]:
-            script = ""
+            script=""
         else:
-            script = self.config["target"]["pre_sql"]
+            script=self.config["target"]["pre_sql"]
         if generate_sql:
             return script
         else:
             return self.execute_script(script)
 
-    def step_06_operate(self, generate_sql=False):
+    def step_06_operate(self, generate_sql = False):
         # TODO
         raise NotImplementedError
 
-    def step_07_target_post_sql(self, generate_sql=False):
+    def step_07_target_post_sql(self, generate_sql = False):
         if "post_sql" not in self.config["target"]:
-            script = ""
+            script=""
         else:
-            script = self.config["target"]["post_sql"]
+            script=self.config["target"]["post_sql"]
         if generate_sql:
             return script
         else:
             return self.execute_script(script)
 
-    def step_08_clean(self, generate_sql=False):
+    def step_08_clean(self, generate_sql = False):
         # There is no need to remove temp views since they belong to a single session only.
         if generate_sql:
             return ""
@@ -201,7 +200,7 @@ class DataLoader:
         #  + target post-sql
         #  + clean up: temp tables, temp views, etc
 
-        scripts = [
+        scripts=[
             self.step_01_source_pre_sql(generate_sql=True),
             self.step_02_create_reference_views(generate_sql=True),
             self.step_03_create_source_view(generate_sql=True),
