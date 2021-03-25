@@ -131,6 +131,7 @@ class DataLoader:
                 map(
                     create_view_ddl,
                     self.config["source"]["reference_table_path"].items()
+                )
             )
 
         if generate_sql:
@@ -139,7 +140,7 @@ class DataLoader:
             return self.execute_script(script)
 
     def step_03_create_source_view(self, generate_sql=False):
-        script="CREATE OR REPLACE TEMPORARY VIEW __source_view AS \n {}".format(
+        script = "CREATE OR REPLACE TEMPORARY VIEW __source_view AS \n {}".format(
             self.config["source"]["query"])
 
         if generate_sql:
@@ -149,9 +150,9 @@ class DataLoader:
 
     def step_04_source_post_sql(self, generate_sql=False):
         if "post_sql" not in self.config["source"]:
-            script=""
+            script = ""
         else:
-            script=self.config["source"]["post_sql"]
+            script = self.config["source"]["post_sql"]
         if generate_sql:
             return script
         else:
@@ -159,9 +160,9 @@ class DataLoader:
 
     def step_05_target_pre_sql(self, generate_sql=False):
         if "pre_sql" not in self.config["target"]:
-            script=""
+            script = ""
         else:
-            script=self.config["target"]["pre_sql"]
+            script = self.config["target"]["pre_sql"]
         if generate_sql:
             return script
         else:
@@ -173,9 +174,9 @@ class DataLoader:
 
     def step_07_target_post_sql(self, generate_sql=False):
         if "post_sql" not in self.config["target"]:
-            script=""
+            script = ""
         else:
-            script=self.config["target"]["post_sql"]
+            script = self.config["target"]["post_sql"]
         if generate_sql:
             return script
         else:
@@ -200,7 +201,7 @@ class DataLoader:
         #  + target post-sql
         #  + clean up: temp tables, temp views, etc
 
-        scripts=[
+        scripts = [
             self.step_01_source_pre_sql(generate_sql=True),
             self.step_02_create_reference_views(generate_sql=True),
             self.step_03_create_source_view(generate_sql=True),
