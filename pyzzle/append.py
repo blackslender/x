@@ -18,7 +18,7 @@ class DataLoaderAppend(DataLoader):
             target_table = "delta.`{}`".format(self.config["target"]["path"])
 
         script = f"""CREATE OR REPLACE TEMPORARY VIEW __target_view AS TABLE {target_table};\n"""
-        script += = f"""INSERT INTO __target_view SELECT * FROM __source_view"""
+        script += f"""INSERT INTO __target_view SELECT * FROM __source_view"""
         if generate_sql:
             return script
         else:
