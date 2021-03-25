@@ -15,7 +15,7 @@ class DataLoaderAppend(DataLoader):
         if "table" in self.config["target"]:
             target_table = self.config["target"]["table"]
         elif "path" in self.config["target"]:
-            target_table = "delta.`{}`".format(target_table)
+            target_table = "delta.`{}`".format(self.config["target"]["path"])
 
         script = f"""INSERT INTO {target_table} SELECT * FROM __source_view"""
         if generate_sql:
