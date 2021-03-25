@@ -140,8 +140,12 @@ class DataLoader:
             return self.execute_script(script)
 
     def step_03_create_source_view(self, generate_sql=False):
-        script = "CREATE OR REPLACE TEMPORARY VIEW __source_view AS \n {}".format(
-            self.config["source"]["query"])
+        if "query" in self.config["source"]:
+            script = "CREATE OR REPLACE TEMPORARY VIEW __source_view AS \n {}".format(
+                self.config["source"]["query"])
+        else:
+            script = "CREATE OR REPLACE TEMPORARY VIEW __source_view AS TABLE {} \n".format(
+                self.config["source"]["table"])
 
         if generate_sql:
             return script
