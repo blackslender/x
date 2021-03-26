@@ -18,7 +18,7 @@ def update(job_config):
 
     if "where_statement_on_table" not in job_config["target"]:
         job_config["target"]["where_statement_on_table"] = "1=1"
-    part0_sql = '''CREATE OR REPLACE TEMPORARY VIEW __target_view AS TABLE {target_table};\n'''.format(
+    part0_sql = '''CREATE OR REPLACE TEMPORARY VIEW __target_view AS TABLE {};\n'''.format(
         target_table)
     part1_sql = '''MERGE INTO __temp_view AS TGT \nUSING (SELECT * FROM ({source_table})) AS SRC \nON '''
     part2_sql = job_config["target"]["where_statement_on_table"] + ' AND '

@@ -91,8 +91,10 @@ class DataLoader:
         else:
             # If a multi-statement script is provided, return the result of last statement.
             statements = filter(
-                lambda x: x != "", map(
-                    lambda x: x.strip(), script.split(";")))
+                lambda x: x != "",
+                map(
+                    lambda x: x.strip(),
+                    script.split(";")))
 
             return list(map(lambda x: self.spark.sql(x), statements))[-1]
 
@@ -144,7 +146,7 @@ class DataLoader:
             script = "CREATE OR REPLACE TEMPORARY VIEW __source_view AS \n {}".format(
                 self.config["source"]["query"])
         else:
-            script = "CREATE OR REPLACE TEMPORARY VIEW __source_view AS TABLE {} \n".format(
+            script = "CREATE OR REPLACE TEMPORARY VIEW __source_view AS TABLE {}".format(
                 self.config["source"]["table"])
 
         if generate_sql:
@@ -215,7 +217,7 @@ class DataLoader:
             self.step_07_target_post_sql(generate_sql=True),
             self.step_08_clean(generate_sql=True)
         ]
-        return ";\n\n".join(filter(lambda x: x != "", scripts))
+        return ";\n\n".join(filter(lambda x: x != "", scripts)) + ";"
 
     def run(self):
         """Execute the whole job"""
