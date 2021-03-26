@@ -28,7 +28,8 @@ def update(job_config):
     part5_sql = generate_sql_condition_string(
         job_config['target']['update_column'], ",")
 
-    update_sql_string = part1_sql + part2_sql + part3_sql + part4_sql + part5_sql
+    update_sql_string = part0_sql + part1_sql + \
+        part2_sql + part3_sql + part4_sql + part5_sql
     # print(update_sql_string)
     return update_sql_string
 
