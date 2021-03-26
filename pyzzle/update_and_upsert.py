@@ -20,15 +20,13 @@ def update(job_config):
         job_config["target"]["where_statement_on_table"] = "1=1"
     part0_sql = '''CREATE OR REPLACE TEMPORARY VIEW __target_view AS TABLE {};\n'''.format(
         target_table)
-    part1_sql = '''MERGE INTO __temp_view AS TGT \nUSING (SELECT * FROM ({source_table})) AS SRC \nON '''
+    part1_sql = '''MERGE INTO __target_view AS TGT \nUSING __source_view AS SRC \nON '''
     part2_sql = job_config["target"]["where_statement_on_table"] + ' AND '
     part3_sql = generate_sql_condition_string(
         job_config['target']['primary_key_column'], "AND")
     part4_sql = '''\nWHEN MATCHED THEN \n\tUPDATE SET '''
     part5_sql = generate_sql_condition_string(
         job_config['target']['update_column'], ",")
-
-    source_table = "__source_view"
 
     part1_sql = part1_sql.format(source_table=source_table)
     update_sql_string = part1_sql + part2_sql + part3_sql + part4_sql + part5_sql
