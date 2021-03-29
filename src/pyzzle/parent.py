@@ -2,15 +2,20 @@ import pyzzle
 from functools import reduce
 import yaml
 import re
+import pyspark
 
 
 class DataLoader:
 
     @staticmethod
     def init_dataloader(config_yaml_filepath, spark=None, params={}):
+        # Update on 29/3: spark is no longer required, default session can be obtained by
+        if spark is None:
+            spark = pyspark.sql.session.SparkSession.getActiveSession()
+
         if spark is None:
             raise Exception(
-                "Please provide spark instance (provide spark=spark in Databricks)")
+                "Cannot get active spark session, please provide spark instance (provide spark=spark in Databricks)")
 
         with open(config_yaml_filepath, "r") as f:
             raw_config = f.read()
