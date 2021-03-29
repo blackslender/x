@@ -1,0 +1,14 @@
+README.md
+pyproject.toml
+setup.cfg
+setup.py
+src/pyzzle/__init__.py
+src/pyzzle/append.py
+src/pyzzle/overwrite.py
+src/pyzzle/parent.py
+src/pyzzle/update_and_upsert.py
+src/pyzzle/validate.py
+src/pyzzle_just_analytics.egg-info/PKG-INFO
+src/pyzzle_just_analytics.egg-info/SOURCES.txt
+src/pyzzle_just_analytics.egg-info/dependency_links.txt
+src/pyzzle_just_analytics.egg-info/top_level.txt
