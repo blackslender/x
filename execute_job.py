@@ -24,3 +24,5 @@ if __name__ == "__main__":
         config_path,
         spark=pyspark.sql.session.SparkSession.getActiveSession(),
         params=kargs)
+
+    dataloader.run()
