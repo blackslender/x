@@ -25,4 +25,6 @@ if __name__ == "__main__":
         spark=pyspark.sql.session.SparkSession.getActiveSession(),
         params=kargs)
 
+    print("Job's full script:")
+    print(dataloader.generate_full_sql())
     dataloader.run()
