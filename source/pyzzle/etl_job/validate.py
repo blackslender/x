@@ -7,9 +7,8 @@ class JobConfigException(Exception):
 
 
 class JobConfigValidator:
-
     def __init__(self, dataloader, print_log=True):
-        assert isinstance(dataloader, pyzzle.DataLoader)
+        assert isinstance(dataloader, pyzzle.BaseETLJob)
         self.dataloader = dataloader
 
         if print_log:
@@ -27,8 +26,9 @@ class JobConfigValidator:
         '''
         # If job_config is None, use dataloader's
         job_config = job_config or self.dataloader.config
-        assert isinstance(key, str) or (isinstance(key, list)
-                                        and all(map(lambda x: isinstance(x, str), key)))
+        assert isinstance(
+            key, str) or (isinstance(key, list)
+                          and all(map(lambda x: isinstance(x, str), key)))
         if isinstance(key, str):
             key = [key]
         nested_key = ""
@@ -36,14 +36,18 @@ class JobConfigValidator:
             if k not in job_config:
                 if raise_exception:
                     raise JobConfigException(
-                        "The key '{k}' does not exists in job_config{nested_key}")
+                        "The key '{k}' does not exists in job_config{nested_key}"
+                    )
                 else:
                     return False
             job_config = job_config[k]
             nested_key += "[\"{}\"]".format(k)
         return True
 
-    def check_multiple_config_keys(self, key_list, job_config=None, raise_exception=False):
+    def check_multiple_config_keys(self,
+                                   key_list,
+                                   job_config=None,
+                                   raise_exception=False):
         '''
         Check if all required keys exist in the config object
         Parameters:
@@ -52,8 +56,10 @@ class JobConfigValidator:
         - job_config: dict of config object. If no job_config is provided, use the dataloader's config as default
         '''
         job_config = job_config or self.dataloader.config
-        missing_keys = list(filter(lambda x: not self.check_config_key(
-            x, raise_exception=False), key_list))
+        missing_keys = list(
+            filter(
+                lambda x: not self.check_config_key(x, raise_exception=False),
+                key_list))
 
         if len(missing_keys) > 0:
             if raise_exception:
@@ -68,7 +74,8 @@ class JobConfigValidator:
         test_result &= self.check_mandatory_param(
             raise_exception=raise_exception)
         self.print(
-            "Validating mandatory parameters for UPDATE and UPSERT operations...")
+            "Validating mandatory parameters for UPDATE and UPSERT operations..."
+        )
         test_result &= self.check_mandatory_param_update_and_upsert(
             raise_exception=raise_exception)
         self.print("Validating target table's existant...")
@@ -76,26 +83,30 @@ class JobConfigValidator:
         self.print("Successful validation!")
         return test_result
 
-    def check_mandatory_param_update_and_upsert(self, job_config=None, raise_exception=False):
+    def check_mandatory_param_update_and_upsert(self,
+                                                job_config=None,
+                                                raise_exception=False):
         '''
         Parameters:
             - job_config: dict of config object. If no config is provided, use the dataloader's config as default
         '''
         job_config = job_config or self.dataloader.config
-        required_keys = [
-            ["target", "update_column"],
-            ["target", "primary_key_column"]
-        ]
+        required_keys = [["target", "update_column"],
+                         ["target", "primary_key_column"]]
 
-        if job_config["target"]["operation"].lower() not in ("update", "upsert"):
+        if job_config["target"]["operation"].lower() not in ("update",
+                                                             "upsert"):
             return True
 
         try:
-            return self.check_multiple_config_keys(required_keys, job_config=job_config, raise_exception=raise_exception)
+            return self.check_multiple_config_keys(
+                required_keys,
+                job_config=job_config,
+                raise_exception=raise_exception)
         except JobConfigException as e:
             if raise_exception:
-                raise JobConfigException(
-                    "For UPDATE/UPSERT operation: " + str(e))
+                raise JobConfigException("For UPDATE/UPSERT operation: " +
+                                         str(e))
             else:
                 return False
         raise NotImplementedError
@@ -106,23 +117,27 @@ class JobConfigValidator:
             - job_config: dict of config object. If no config is provided, use the dataloader's config as default
         '''
         job_config = job_config or self.dataloader.config
-        required_keys = [
-            "source",
-            "target",
-            ["target", "operation"]
-        ]
-        if not self.check_multiple_config_keys(required_keys, job_config=job_config, raise_exception=raise_exception):
+        required_keys = ["source", "target", ["target", "operation"]]
+        if not self.check_multiple_config_keys(
+                required_keys,
+                job_config=job_config,
+                raise_exception=raise_exception):
             return False
 
         # Added on 25/3: Target now can be table or path
-        if not ("path" in job_config["target"] or "table" in job_config["target"]):
+        if not ("path" in job_config["target"]
+                or "table" in job_config["target"]):
             raise JobConfigException(
-                "Either 'table' or 'path' config should be provided in the job target config")
+                "Either 'table' or 'path' config should be provided in the job target config"
+            )
 
-        if job_config["target"]["operation"] not in ("insert", "append", "update", "overwrite", "upsert"):
+        if job_config["target"]["operation"] not in ("insert", "append",
+                                                     "update", "overwrite",
+                                                     "upsert"):
             if raise_exception:
                 raise JobConfigException(
-                    "Operation {} is not valid. The allowed operations are 'insert'/'append', 'update', 'overwrite', 'upsert'".format(job_config["target"]["operation"]))
+                    "Operation {} is not valid. The allowed operations are 'insert'/'append', 'update', 'overwrite', 'upsert'"
+                    .format(job_config["target"]["operation"]))
             else:
                 return False
         return True
@@ -134,14 +149,16 @@ class JobConfigValidator:
         '''
         job_config = job_config or self.dataloader.config
         try:
-            self.dataloader.execute_script("show create table {table_name} ;".format(
-                table_name=job_config["target"]["table"]))
+            self.dataloader.execute_script(
+                "show create table {table_name} ;".format(
+                    table_name=job_config["target"]["table"]))
             return True
         except Exception as e:
             if "not found" in str(e):
                 if raise_exception:
-                    raise JobConfigException("Table {} does not exists. Please check the configuration.".format(
-                        job_config["target"]["table"]))
+                    raise JobConfigException(
+                        "Table {} does not exists. Please check the configuration."
+                        .format(job_config["target"]["table"]))
                 else:
                     return False
             else:

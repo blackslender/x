@@ -1,8 +1,9 @@
-from pyzzle import DataLoader
+from pyzzle import BaseETLJob
 
 
 def generate_sql_condition_string(list_of_column, link_char_parameter):
-    return (" " + link_char_parameter + " ").join(map(lambda x: "TGT.{} = SRC.{}".format(x, x), list_of_column))
+    return (" " + link_char_parameter + " ").join(
+        map(lambda x: "TGT.{} = SRC.{}".format(x, x), list_of_column))
 
 
 def generate_column_list_string(list_of_column, prefix):
@@ -38,18 +39,19 @@ def update(job_config):
 def upsert(job_config):
     update_sql_string = update(job_config)
 
-    insert_sql_string = '''\nWHEN NOT MATCHED THEN \n\tINSERT ({str1}) VALUES ({str2}) '''.format(str1=generate_column_list_string(
-        job_config["target"]["update_column"], "TGT"), str2=generate_column_list_string(job_config["target"]["update_column"], "SRC"))
+    insert_sql_string = '''\nWHEN NOT MATCHED THEN \n\tINSERT ({str1}) VALUES ({str2}) '''.format(
+        str1=generate_column_list_string(job_config["target"]["update_column"],
+                                         "TGT"),
+        str2=generate_column_list_string(job_config["target"]["update_column"],
+                                         "SRC"))
     merge_sql_string = update_sql_string + insert_sql_string
     # print(merge_sql_string)
     return merge_sql_string
 
 
-class DataLoaderUpdate(DataLoader):
-
-    def __init__(self, config, spark=None,  params={}):
-        super(DataLoaderUpdate, self).__init__(
-            config, spark=spark, params=params)
+class UpdateETLJob(BaseETLJob):
+    def __init__(self, config, spark=None, params={}):
+        super(UpdateETLJob, self).__init__(config, spark=spark, params=params)
         # # TODO
         assert self.config["target"]["operation"] == "update"
         assert "primary_key_column" in self.config["target"]
@@ -68,11 +70,9 @@ class DataLoaderUpdate(DataLoader):
             return self.execute_script(script)
 
 
-class DataLoaderUpsert(DataLoader):
-
+class UpsertETLJob(BaseETLJob):
     def __init__(self, config, spark=None, params={}):
-        super(DataLoaderUpsert, self).__init__(
-            config, spark=spark, params=params)
+        super(UpsertETLJob, self).__init__(config, spark=spark, params=params)
         # # TODO
         assert self.config["target"]["operation"] == "upsert"
         assert "primary_key_column" in self.config["target"]

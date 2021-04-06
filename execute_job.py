@@ -11,16 +11,13 @@ import pyspark
 if __name__ == "__main__":
     args = filter(lambda x: "=" not in x, sys.argv)
     kargs = dict(
-        map(
-            lambda x: (x[:x.index("=")], x[x.index("=")+1:]),
-            filter(lambda x: "=" in x, sys.argv)
-        )
-    )
+        map(lambda x: (x[:x.index("=")], x[x.index("=") + 1:]),
+            filter(lambda x: "=" in x, sys.argv)))
     json_kargs = json.dumps(kargs)
 
     config_path = kargs["config_path"]
 
-    dataloader = pyzzle.DataLoader.init_dataloader(
+    dataloader = pyzzle.BaseETLJob.init_dataloader(
         config_path,
         spark=pyspark.sql.session.SparkSession.getActiveSession(),
         params=kargs)

@@ -1,12 +1,12 @@
-from pyzzle import DataLoader
+from pyzzle import BaseETLJob
 import warnings
 
 
-class DataLoaderOverwrite(DataLoader):
-
+class OverwriteETLJob(BaseETLJob):
     def __init__(self, config, spark=None, params={}):
-        super(DataLoaderOverwrite, self).__init__(
-            config, spark=spark, params=params)
+        super(OverwriteETLJob, self).__init__(config,
+                                                  spark=spark,
+                                                  params=params)
         assert self.config["target"]["operation"] == "overwrite"
 
     def _get_target_table_partition_columns(self, table_name):
@@ -22,10 +22,16 @@ class DataLoaderOverwrite(DataLoader):
         source_table = self.execute_script("SELECT  * FROM __source_view")
         partition_columns = self._get_target_table_partition_columns(
             self.config["target"]["table"])
-        distinct_partition_values = list(map(lambda x: x.asDict(
-        ), source_table.select(*partition_columns).distinct().collect()))
-        condition_string = " OR ".join(map(lambda row: "(" + " AND ".join(map(
-            lambda key: "{key} = '{value}'".format(key=key, value=row[key]), row)) + ")" if len(row) > 0 else " 1=1 ", distinct_partition_values))
+        distinct_partition_values = list(
+            map(lambda x: x.asDict(),
+                source_table.select(*partition_columns).distinct().collect()))
+        condition_string = " OR ".join(
+            map(
+                lambda row: "(" + " AND ".join(
+                    map(
+                        lambda key: "{key} = '{value}'".format(
+                            key=key, value=row[key]), row)) + ")"
+                if len(row) > 0 else " 1=1 ", distinct_partition_values))
         if condition_string == "()":
             condition_string = " 1=1 "
         return condition_string
@@ -43,12 +49,12 @@ class DataLoaderOverwrite(DataLoader):
             partition_cols = self._get_target_table_partition_columns(
                 target_table)
             script = [
-                "-- OVERWRITE operation is not supported in Databricks SQL. These query are for reference only."]
+                "-- OVERWRITE operation is not supported in Databricks SQL. These query are for reference only."
+            ]
             script = [
-                "INSERT OVERWRITE {target_table} PARTITION BY ({partition_cols}) SELECT * FROM __source_view".format(
-                    target_table=target_table,
-                    partition_cols=", ".join(partition_cols)
-                )
+                "INSERT OVERWRITE {target_table} PARTITION BY ({partition_cols}) SELECT * FROM __source_view"
+                .format(target_table=target_table,
+                        partition_cols=", ".join(partition_cols))
             ]
             return "\n".join(script)
         else:

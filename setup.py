@@ -18,9 +18,9 @@ setuptools.setup(
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
+        "Operating System :: Databricks Clusters",
     ],
-    package_dir={"": "src"},
-    packages=setuptools.find_packages(where="src"),
+    package_dir={"": "source"},
+    packages=setuptools.find_packages(where="source"),
     python_requires=">=3.6",
 )

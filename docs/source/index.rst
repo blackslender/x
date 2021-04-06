@@ -1,9 +1,9 @@
-.. pyzzle documentation master file, created by
-   sphinx-quickstart on Fri Apr  2 10:59:32 2021.
+.. Pyzzle documentation master file, created by
+   sphinx-quickstart on Fri Apr  2 15:26:54 2021.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to pyzzle's documentation!
+Welcome to Pyzzle's documentation!
 ==================================
 
 .. toctree::
@@ -18,3 +18,6 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+.. autodoc:: pyzzle
+   

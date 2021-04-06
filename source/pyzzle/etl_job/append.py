@@ -1,15 +1,14 @@
-from pyzzle import DataLoader
+from pyzzle import BaseETLJob
 
 
-class DataLoaderAppend(DataLoader):
-
+class DataLoaderAppend(BaseETLJob):
     def __init__(self, config, spark=None, params={}):
-        super(DataLoaderAppend, self).__init__(
-            config, spark=spark, params=params)
+        super(DataLoaderAppend, self).__init__(config,
+                                               spark=spark,
+                                               params=params)
 
         # Both 'insert' and 'append' operation are allowed
-        assert self.config["target"]["operation"] in [
-            "insert", "append"]
+        assert self.config["target"]["operation"] in ["insert", "append"]
 
     def step_06_operate(self, generate_sql=False):
         if "table" in self.config["target"]:

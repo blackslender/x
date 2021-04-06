@@ -5,17 +5,36 @@ import re
 import pyspark
 
 
-class DataLoader:
-
+class BaseETLJob:
     @staticmethod
-    def init_dataloader(config_yaml_filepath, spark=None, params={}):
+    def init_dataloader(config_yaml_filepath: str, params: dict = {}):
+        '''Creates dataloader object related to configuration file.
+
+        This method should be used to create DataLoader objects instead of direct constructor.
+
+        Args:
+            config_yaml_filepath: Path to yaml config file. 
+            params: 
+                dict of (param_name: param_value) which is dynamic parameters for job config.
+                Dynamic parameters could be placed in job config as '${param_name}'
+
+        Returns:
+            A DataLoader object (one of its sub-class object, related to the config's operation).
+
+        Raises:
+            Exception: Cannot get active spark session.
+            Exception: Some parameter(s) are not provided.
+            Exception: 'target - operation' key must exist in job config.
+            Exception: Unexpected operation.
+        '''
+
         # Update on 29/3: spark is no longer required, default session can be obtained by
-        if spark is None:
-            spark = pyspark.sql.session.SparkSession.getActiveSession()
+        spark = pyspark.sql.session.SparkSession.getActiveSession()
 
         if spark is None:
             raise Exception(
-                "Cannot get active spark session, please provide spark instance (provide spark=spark in Databricks)")
+                "Cannot get active spark session, please check spark environment."
+            )
 
         with open(config_yaml_filepath, "r") as f:
             raw_config = f.read()
@@ -31,8 +50,9 @@ class DataLoader:
             return all_params
 
         if len(get_required_params(config_yaml_filepath)) > 0:
-            raise Exception("All parameters should be provided. Please provide " +
-                            str(get_required_params(config_yaml_filepath)))
+            raise Exception(
+                "All parameters should be provided. Please provide " +
+                str(get_required_params(config_yaml_filepath)))
 
         # All config key should be lowercase
         for key in list(config.keys()):
@@ -44,26 +64,34 @@ class DataLoader:
             raise KeyError("The target - operation key is required for a job.")
 
         if operation.lower() == "overwrite":
-            return pyzzle.DataLoaderOverwrite(config, spark=spark, params=params)
+            return pyzzle.OverwriteETLJob(config, spark=spark, params=params)
         if operation.lower() in ["append", "insert"]:
             return pyzzle.DataLoaderAppend(config, spark=spark, params=params)
         elif operation.lower() == "update":
-            return pyzzle.DataLoaderUpdate(config, spark=spark, params=params)
+            return pyzzle.UpdateETLJob(config, spark=spark, params=params)
         elif operation.lower() == "upsert":
-            return pyzzle.DataLoaderUpsert(config, spark=spark, params=params)
+            return pyzzle.UpsertETLJob(config, spark=spark, params=params)
         else:
             raise ValueError("Unexpected oparation '%s'" % operation)
 
     def __init__(self, config, spark=None, params={}):
-        r"""
-        DO NOT USE CONSTRUCTOR TO CREATE DATALOADER OBJECT. Instead, use static 'init_dataloader' as an object factory.
+        r'''DO NOT USE CONSTRUCTOR TO CREATE DATALOADER OBJECT. 
+        
+        Instead, use static 'init_dataloader' as an object factory.
         When overwriting this constructor, the parent constructor should be called as super(DataLoaderChildClass, self).\_\_init\_\_(config, spark, params)
 
-        Parameters:
-        - config: Dictionary of job config
-        - params: optional, the dynamic parameters as a dict of (param - value).
-        """
-        if type(self) is DataLoader:
+        Args:
+            config: dict of job config, which is parsed from yml config file.
+            params: 
+                dict of (param_name: param_value) which is dynamic parameters for job config.
+                Dynamic parameters could be placed in job config as '${param_name}'
+        
+        Returns: None
+
+        Raises:
+            Exception: DataLoader class is abstract.
+        '''
+        if type(self) is BaseETLJob:
             raise Exception("DataLoader class is abstract.")
 
         self.config = config
@@ -77,6 +105,11 @@ class DataLoader:
         #     self, print_log=False).validate_all(raise_exception=True)
 
     def validate(self):
+        '''Manually validates the job
+
+        The validation responsibility belongs to `pyzzle.JobConfigValidator` class. This method simply call validation and print all result to stdout
+
+        '''
         return pyzzle.JobConfigValidator(self, print_log=True).validate_all()
 
     def __repr__(self):
@@ -85,7 +118,19 @@ class DataLoader:
     # Script executor
 
     def execute_script(self, script):
-        """Execute a script"""
+        '''Executes an sql-script
+        
+        Execute an sql-script from spark session. Users are responsible to validate this script.
+        If a multi-statement script is provided, it would be split into atomic scripts by semicolon (;) and these would be executed sequently.
+
+        Args:
+            script: the sql-script
+        
+        Returns: 
+            A SparkDataframe which is the result of the script. If script is multi-statement, return the result of lastest atomic sub-script.
+            Return None if empty script is provided.
+        
+        '''
 
         # Users are responsible to validate the script
         script = script.replace("\n", " ")
@@ -95,15 +140,23 @@ class DataLoader:
             return self.spark.sql(script)
         else:
             # If a multi-statement script is provided, return the result of last statement.
-            statements = filter(
-                lambda x: x != "",
-                map(
-                    lambda x: x.strip(),
-                    script.split(";")))
+            statements = filter(lambda x: x != "",
+                                map(lambda x: x.strip(), script.split(";")))
 
             return list(map(lambda x: self.spark.sql(x), statements))[-1]
 
     def step_01_source_pre_sql(self, generate_sql=False):
+        '''Executes job source side pre-sql
+        
+        Step 1 of the job's process. If pre-sql is provided from job's source side, it would be executed
+
+        Args:
+            generate_sql: boolean. If yes, only return the sql-script related to this step. Else, execute the step immediately.
+        
+        Returns: 
+            If generate_sql=True: return the sql-script related to this step (without executing).
+            Else: return the pre-sql query result as SparkDataFrame
+        '''
         if "pre_sql" not in self.config["source"]:
             script = ""
         else:
@@ -115,15 +168,23 @@ class DataLoader:
             return self.execute_script(script)
 
     def step_02_create_reference_views(self, generate_sql=False):
-        """ Create temp views related to reference table paths from source config
-        Parameters:
-            + paths: dictionary of (view_name, table path)
-            + generate_sql: bool. If False: execute creating the view, else return the sql script only (no execution).
-        Return: dictionary of (view_name, dataframe) if generate_sql=True else str - the script"""
+        ''' Creates temp views related to reference table paths from source config
 
+        Execute job source side pre-sql
+        
+         If pre-sql is provided from job's source side, it would be executed
+
+        Args:
+            generate_sql: boolean. If yes, only return the sql-script related to this step. Else, execute the step immediately.
+        
+        Returns: 
+            If generate_sql=True: return the sql-script related to this step (without executing).
+            Else: return dictionary of (view_name: view_dataframe)
+        '''
         def create_view_ddl(args):
             view_name, path = args
-            return "CREATE OR REPLACE TEMPORARY VIEW {} AS SELECT * FROM delta.`{}`;".format(view_name, path)
+            return "CREATE OR REPLACE TEMPORARY VIEW {} AS SELECT * FROM delta.`{}`;".format(
+                view_name, path)
 
         if "reference_table_path" not in self.config["source"]:
             script = ""
@@ -135,11 +196,8 @@ class DataLoader:
                 self.config["source"]["reference_table_path"] = r
 
             script = ";\n".join(
-                map(
-                    create_view_ddl,
-                    self.config["source"]["reference_table_path"].items()
-                )
-            )
+                map(create_view_ddl,
+                    self.config["source"]["reference_table_path"].items()))
 
         if generate_sql:
             return script
@@ -147,6 +205,23 @@ class DataLoader:
             return self.execute_script(script)
 
     def step_03_create_source_view(self, generate_sql=False):
+        ''' Creates temp view represents the source query
+
+        This method create (or replace) a temp view called '__source_view' that represents the source query or source table.
+
+        Args:
+            generate_sql: boolean. If yes, only return the sql-script related to this step. Else, execute the step immediately.
+        
+        Returns: 
+            If generate_sql=True: return the sql-script related to this step (without executing).
+            Else: return the pre-sql query result as SparkDataFrame. Since creating temp view doesn't result anything, this would return None
+
+        Parameters:
+            + paths: dictionary of (view_name, table path)
+            + generate_sql: bool. If False: execute creating the view, else return the sql script only (no execution).
+        Return: 
+            dictionary of (view_name, dataframe) if generate_sql=True else str - the script'''
+
         if "query" in self.config["source"]:
             script = "CREATE OR REPLACE TEMPORARY VIEW __source_view AS \n {}".format(
                 self.config["source"]["query"])
@@ -201,7 +276,7 @@ class DataLoader:
             return None
 
     def generate_full_sql(self):
-        """Generate job full sql"""
+        '''Generate job full sql'''
         # Changed on 24-03: job flow now contains
         #  + source pre-sql
         #  + script to create temp view to referenced tables
@@ -225,7 +300,7 @@ class DataLoader:
         return ";\n\n".join(filter(lambda x: x != "", scripts)) + ";"
 
     def run(self):
-        """Execute the whole job"""
+        '''Execute the whole job'''
         # Changed on 24-03: job flow now contains
         #  + source pre-sql
         #  + script to create temp view to referenced tables
