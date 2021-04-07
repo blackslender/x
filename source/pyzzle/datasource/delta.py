@@ -115,7 +115,7 @@ class DeltaDataSource(BaseDataSource):
         Source and target table is defaultly alias-ed as 'SRC' and 'TGT'. This could be used in condition string and update/insert expressions.
         Args:
             df (DataFrame): The source dataframe to write.
-            target_mode (str): 'table' or 'path'
+            save_mode (str): 'table' or 'path'
             location (str): The table name or path to be merge into.
             condition (str): The condition in SQL-like string form.
             match_update_dict (dict): Contains ("target_column": "expression"). 
@@ -131,13 +131,13 @@ class DeltaDataSource(BaseDataSource):
                           condition,
                           match_update_dict,
                           not_match_insert_dict=not_match_insert_dict)
-        target_mode = target_mode.lower()
-        if target_mode == "table":
+        save_mode = save_mode.lower()
+        if save_mode == "table":
             target_table = DeltaTable.forName(self.spark, location)
-        elif target_mode == "path":
+        elif save_mode == "path":
             target_table = DeltaTable.forPath(self.spark, location)
         else:
-            raise ValueError("target_mode should be 'path' or 'table'.")
+            raise ValueError("save_mode should be 'path' or 'table'.")
 
         merger = target_table.alias("TGT").merge(df.alias("SRC"), condition)
         merger = merger.whenMatchedUpdate(set=match_update_dict)
