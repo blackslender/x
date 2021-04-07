@@ -93,7 +93,7 @@ class DeltaDataSource(BaseDataSource):
         writer = writer.mode(mode)
         writer = reduce(lambda w, c: w.option(c, options[c]), options, writer)
 
-        save_mode = save_model.lower()
+        save_mode = save_mode.lower()
         if save_mode == "table":
             writer.saveAsTable(target)
         elif save_mode == "path":
