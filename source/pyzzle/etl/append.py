@@ -1,7 +1,7 @@
-import pyzzle
+from .parent import BaseETLJob
 
 
-class AppendETLJob(pyzzle.etl.BaseETLJob):
+class AppendETLJob(BaseETLJob):
     def __init__(self, config, spark=None, params={}):
         super(AppendETLJob, self).__init__(config, spark=spark, params=params)
 

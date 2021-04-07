@@ -1,8 +1,8 @@
-import pyzzle
+from .parent import BaseETLJob
 import warnings
 
 
-class OverwriteETLJob(pyzzle.etl.BaseETLJob):
+class OverwriteETLJob(BaseETLJob):
     def __init__(self, config, spark=None, params={}):
         super(OverwriteETLJob, self).__init__(config,
                                               spark=spark,

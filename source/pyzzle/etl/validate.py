@@ -8,7 +8,7 @@ class JobConfigException(Exception):
 
 class JobConfigValidator:
     def __init__(self, dataloader, print_log=True):
-        assert isinstance(dataloader, pyzzle.BaseETLJob)
+        assert isinstance(dataloader, pyzzle.etl.BaseETLJob)
         self.dataloader = dataloader
 
         if print_log:
