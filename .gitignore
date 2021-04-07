@@ -1,7 +1,8 @@
 .vscode
-build/
+*/build/
 __pycache__
 draft.py
 dist
 *egg-info
 draft*
+.venv

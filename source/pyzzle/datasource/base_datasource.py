@@ -12,6 +12,7 @@ class DataSourceException(Exception):
 
 class BaseDataSource(abc.ABC):
     def __init__(self):
+        self.name = "datasource_name"
         if type(self) is BaseDataSource:
             raise NotImplementedError
 

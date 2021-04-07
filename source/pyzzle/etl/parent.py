@@ -123,7 +123,7 @@ class BaseETLJob:
     # Script executor
 
     def execute_script(self, script):
-        '''Executes an sql-script
+        '''Executes an sql-script from databricks' sparksession.
         
         Execute an sql-script from spark session. Users are responsible to validate this script.
         If a multi-statement script is provided, it would be split into atomic scripts by semicolon (;) and these would be executed sequently.
@@ -153,7 +153,7 @@ class BaseETLJob:
     def step_01_source_pre_sql(self, generate_sql=False):
         '''Executes job source side pre-sql
         
-        Step 1 of the job's process. If pre-sql is provided from job's source side, it would be executed
+        Step 1 of the job's process. If pre-sql is provided from job's source side, it would be executed ON THE SOURCE SIDE
 
         Args:
             generate_sql: boolean. If yes, only return the sql-script related to this step. Else, execute the step immediately.
@@ -170,14 +170,13 @@ class BaseETLJob:
         if generate_sql:
             return script
         else:
-            return self.execute_script(script)
+            return self.from_datasource.execute_sql_script(script)
 
     def step_02_create_reference_views(self, generate_sql=False):
         ''' Creates temp views related to reference table paths from source config
-
-        Execute job source side pre-sql
         
-         If pre-sql is provided from job's source side, it would be executed
+        If reference_table_path is provided from job's source side, they're be created as temporary views IN SPARK SESSION. 
+        This step is only available with delta datasource.
 
         Args:
             generate_sql: boolean. If yes, only return the sql-script related to this step. Else, execute the step immediately.
@@ -204,6 +203,7 @@ class BaseETLJob:
                 map(create_view_ddl,
                     self.config["source"]["reference_table_path"].items()))
 
+        # TODO: Modify this so it shall support other sources
         if generate_sql:
             return script
         else:
@@ -226,52 +226,86 @@ class BaseETLJob:
             + generate_sql: bool. If False: execute creating the view, else return the sql script only (no execution).
         Return: 
             dictionary of (view_name, dataframe) if generate_sql=True else str - the script'''
-
+        script = ("--Spark Session\n")
         if "query" in self.config["source"]:
-            script = "CREATE OR REPLACE TEMPORARY VIEW __source_view AS \n {}".format(
+            script += "CREATE OR REPLACE TEMPORARY VIEW __source_view AS \n {}".format(
                 self.config["source"]["query"])
         else:
-            script = "CREATE OR REPLACE TEMPORARY VIEW __source_view AS TABLE {}".format(
-                self.config["source"]["table"])
-
+            script += "CREATE OR REPLACE TEMPORARY VIEW __source_view AS TABLE {}"\
+                .format(self.config["source"]["table"])
+        
         if generate_sql:
             return script
         else:
-            return self.execute_script(script)
+            source_df = self.from_datasource.execute_sql_script(
+                self.config["source"]["query"])
+            source_df.createOrReplaceTempView("__source_view")
 
     def step_04_source_post_sql(self, generate_sql=False):
+        '''Executes job source side post-sql
+        
+        Step 4 of the job's process. If post-sql is provided from job's source side, it would be executed ON THE SOURCE SIDE.
+        Args:
+            generate_sql: boolean. If yes, only return the sql-script related to this step. Else, execute the step immediately.
+        
+        Returns: 
+            If generate_sql=True: return the sql-script related to this step (without executing).
+            Else: return the post-sql query result as SparkDataFrame
+        '''
         if "post_sql" not in self.config["source"]:
             script = ""
         else:
-            script = self.config["source"]["post_sql"]
+            script = ("--%s\n" % self.from_datasource.name)
+                +self.config["source"]["post_sql"]
         if generate_sql:
             return script
         else:
-            return self.execute_script(script)
+            return self.from_datasource.execute_sql_script(script)
 
     def step_05_target_pre_sql(self, generate_sql=False):
+        '''Executes job target side pre-sql
+        
+        Step 5 of the job's process. If pre-sql is provided from job's target side, it would be executed ON THE TARGET SIDE.
+
+        Args:
+            generate_sql: boolean. If yes, only return the sql-script related to this step. Else, execute the step immediately.
+        
+        Returns: 
+            If generate_sql=True: return the sql-script related to this step (without executing).
+            Else: return the pre-sql query result as SparkDataFrame
+        '''
         if "pre_sql" not in self.config["target"]:
             script = ""
         else:
-            script = self.config["target"]["pre_sql"]
+            script = ("--%s\n" % self.to_datasource.name) + self.config["target"]["pre_sql"]
         if generate_sql:
             return script
         else:
-            return self.execute_script(script)
+            return self.to_datasource.execute_script(script)
 
     def step_06_operate(self, generate_sql=False):
-        # TODO
+        """TODO: Override this method based on the operation."""
         raise NotImplementedError
 
     def step_07_target_post_sql(self, generate_sql=False):
+        '''Executes job source side post-sql
+        
+        Step 7 of the job's process. If post-sql is provided from job's target side, it would be executed ON THE TARGET SIDE.
+        Args:
+            generate_sql: boolean. If yes, only return the sql-script related to this step. Else, execute the step immediately.
+        
+        Returns: 
+            If generate_sql=True: return the sql-script related to this step (without executing).
+            Else: return the post-sql query result as SparkDataFrame
+        '''
         if "post_sql" not in self.config["target"]:
             script = ""
         else:
-            script = self.config["target"]["post_sql"]
+            script = ("--%s\n" % self.to_datasource.name) + self.config["target"]["post_sql"]
         if generate_sql:
             return script
         else:
-            return self.execute_script(script)
+            return self.to_datasource.execute_sql_script(script)
 
     def step_08_clean(self, generate_sql=False):
         # There is no need to remove temp views since they belong to a single session only.
@@ -291,7 +325,7 @@ class BaseETLJob:
         #  + operation happens
         #  + target post-sql
         #  + clean up: temp tables, temp views, etc
-
+    
         scripts = [
             self.step_01_source_pre_sql(generate_sql=True),
             self.step_02_create_reference_views(generate_sql=True),
