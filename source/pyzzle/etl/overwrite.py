@@ -58,10 +58,20 @@ class OverwriteETLJob(BaseETLJob):
             ]
             return "\n".join(script)
         else:
-            source_table = self.execute_sql("SELECT * FROM __source_view")
+            source_df = self.spark.table("__source_view")
             condition_string = self._generate_key_matching_condition_string()
-            source_table.write\
-                .format("delta") \
-                .mode("overwrite") \
-                .option("replaceWhere", condition_string) \
-                .saveAsTable(self.config["target"]["table"])
+            # source_table.write\
+            #     .format("delta") \
+            #     .mode("overwrite") \
+            #     .option("replaceWhere", condition_string) \
+            #     .saveAsTable(self.config["target"]["table"])
+
+            return self.to_datasource.write(source_df,
+                                            mode="overwrite",
+                                            options={
+                                                "replaceWhere": condition_string
+                                            },
+                                            location=location,
+                                            save_mode=save_mode)
+
+            
