@@ -174,7 +174,8 @@ class BaseETLJob:
                 return self.config["source"]["pre_sql"]
         else:
             if "pre_sql" in self.config["source"]:
-                return self.from_datasource.execute_sql(script)
+                return self.from_datasource.execute_sql(
+                    self.config["source"]["pre_sql"])
             else:
                 return None
 
@@ -258,15 +259,18 @@ class BaseETLJob:
             If generate_sql=True: return the sql-script related to this step (without executing).
             Else: return the post-sql query result as SparkDataFrame
         '''
-        if "post_sql" not in self.config["source"]:
-            script = ""
-        else:
-            script = ("--%s\n" % self.from_datasource.name) \
-                + self.config["source"]["post_sql"]
+
         if generate_sql:
-            return script
+            if "post_sql" not in self.config["source"]:
+                return ""
+            else:
+                return self.config["source"]["post_sql"]
         else:
-            return self.from_datasource.execute_sql(script)
+            if "post_sql" in self.config["source"]:
+                return self.from_datasource.execute_sql(
+                    self.config["source"]["post_sql"])
+            else:
+                return None
 
     def step_05_target_pre_sql(self, generate_sql=False):
         '''Executes job target side pre-sql
