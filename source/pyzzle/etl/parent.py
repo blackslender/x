@@ -89,18 +89,19 @@ class BaseETLJob:
         self.config = config
         self.version = self.config["version"]
         self.params = params
+        self.spark = pyspark.sql.SparkSession.getActiveSession()
 
         if self.config["source"]["datasource"].lower() == "delta":
-            self.from_datasource = pyzzle.datasources.DeltaDataSource()
+            self.from_datasource = pyzzle.datasource.DeltaDataSource()
         else:
-            raise pyzzle.datasources.DataSourceException(
+            raise pyzzle.datasource.DataSourceException(
                 "Datasource %s not found" %
                 self.config["config"]["datasource"])
 
         if self.config["source"]["datasource"].lower() == "delta":
-            self.from_datasource = pyzzle.datasources.DeltaDataSource()
+            self.from_datasource = pyzzle.datasource.DeltaDataSource()
         else:
-            raise pyzzle.datasources.DataSourceException(
+            raise pyzzle.datasource.DataSourceException(
                 "Datasource %s not found" %
                 self.config["config"]["datasource"])
 

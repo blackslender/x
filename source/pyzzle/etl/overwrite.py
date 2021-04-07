@@ -3,10 +3,8 @@ import warnings
 
 
 class OverwriteETLJob(BaseETLJob):
-    def __init__(self, config, spark=None, params={}):
-        super(OverwriteETLJob, self).__init__(config,
-                                              spark=spark,
-                                              params=params)
+    def __init__(self, config, params={}):
+        super(OverwriteETLJob, self).__init__(config, params=params)
         assert self.config["target"]["operation"] == "overwrite"
 
     def _get_target_table_partition_columns(self, table_name):

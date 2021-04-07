@@ -50,8 +50,8 @@ def upsert(job_config):
 
 
 class UpdateETLJob(BaseETLJob):
-    def __init__(self, config, spark=None, params={}):
-        super(UpdateETLJob, self).__init__(config, spark=spark, params=params)
+    def __init__(self, config, params={}):
+        super(UpdateETLJob, self).__init__(config, params=params)
         # # TODO
         assert self.config["target"]["operation"] == "update"
         assert "primary_key_column" in self.config["target"]
@@ -71,8 +71,8 @@ class UpdateETLJob(BaseETLJob):
 
 
 class UpsertETLJob(BaseETLJob):
-    def __init__(self, config, spark=None, params={}):
-        super(UpsertETLJob, self).__init__(config, spark=spark, params=params)
+    def __init__(self, config, params={}):
+        super(UpsertETLJob, self).__init__(config, params=params)
         # # TODO
         assert self.config["target"]["operation"] == "upsert"
         assert "primary_key_column" in self.config["target"]
