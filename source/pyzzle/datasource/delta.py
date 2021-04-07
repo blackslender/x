@@ -40,27 +40,27 @@ class DeltaDataSource(BaseDataSource):
         super(DeltaDataSource, self).execute_sql(query)
         return self.spark.sql(query)
 
-    def read(self, table: str = None, path: str = None):
+    def read(self, location, mode="table"):
         '''Reads data from a table or path
 
         Only one of 'table_name' or 'path' must be provided.
 
         Args:
-            table_name: str, name of the table to get
-            path: str, location of the path to read
+            location: str, name of the table to get or path to the table
+            mode: str, 'table' or 'path'
 
         Returns: Spark Dataframe that represents the table or path
 
         Raises:
             DataSourceException: Either 'table' or 'path' parameter should be provided to read.
         '''
-        if table is None and path is None:
-            raise datasource.DataSourceException(
-                "Either 'table' or 'path' parameter should be provided to read."
-            )
+        mode = mode.lower()
 
-        if table is not None: return self.spark.table(table)
-        else: return self.spark.read.load(path)
+        if mode == "table": return self.spark.table(location)
+        elif mode == "path": return self.spark.read.load(location)
+        else:
+            raise datasource.DataSourceException(
+                "mode should be either 'table' or 'path'/")
 
     def write(
             self,
