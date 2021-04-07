@@ -4,6 +4,7 @@ import yaml
 import re
 import pyspark
 
+
 def init_etl_job(config_yaml_filepath: str, params: dict = {}):
     '''Creates ETL job object related to configuration file.
 
@@ -34,14 +35,12 @@ def init_etl_job(config_yaml_filepath: str, params: dict = {}):
     # TODO: move this to validation
     def get_required_params(text):
         param_ex = r"\$\{[A-Za-z_]+[A-Za-z0-9_]*\}"
-        all_params = list(
-            map(lambda x: x[2:-1], re.findall(param_ex, text)))
+        all_params = list(map(lambda x: x[2:-1], re.findall(param_ex, text)))
         return all_params
 
     if len(get_required_params(config_yaml_filepath)) > 0:
-        raise Exception(
-            "All parameters should be provided. Please provide " +
-            str(get_required_params(config_yaml_filepath)))
+        raise Exception("All parameters should be provided. Please provide " +
+                        str(get_required_params(config_yaml_filepath)))
 
     # All config key should be lowercase
     for key in list(config.keys()):
@@ -162,15 +161,17 @@ class BaseETLJob:
             If generate_sql=True: return the sql-script related to this step (without executing).
             Else: return the pre-sql query result as SparkDataFrame
         '''
-        if "pre_sql" not in self.config["source"]:
-            script = ""
-        else:
-            script = self.config["source"]["pre_sql"]
 
         if generate_sql:
-            return script
+            if "pre_sql" not in self.config["source"]:
+                return ""
+            else:
+                return self.config["source"]["pre_sql"]
         else:
-            return self.from_datasource.execute_sql(script)
+            if "pre_sql" in self.config["source"]:
+                return self.from_datasource.execute_sql(script)
+            else:
+                return None
 
     def step_02_create_reference_views(self, generate_sql=False):
         ''' Creates temp views related to reference table paths from source config
