@@ -233,7 +233,7 @@ class BaseETLJob:
         else:
             script += "CREATE OR REPLACE TEMPORARY VIEW __source_view AS TABLE {}"\
                 .format(self.config["source"]["table"])
-        
+
         if generate_sql:
             return script
         else:
@@ -255,8 +255,8 @@ class BaseETLJob:
         if "post_sql" not in self.config["source"]:
             script = ""
         else:
-            script = ("--%s\n" % self.from_datasource.name)
-                +self.config["source"]["post_sql"]
+            script = ("--%s\n" % self.from_datasource.name) \
+                + self.config["source"]["post_sql"]
         if generate_sql:
             return script
         else:
@@ -277,7 +277,8 @@ class BaseETLJob:
         if "pre_sql" not in self.config["target"]:
             script = ""
         else:
-            script = ("--%s\n" % self.to_datasource.name) + self.config["target"]["pre_sql"]
+            script = ("--%s\n" % self.to_datasource.name
+                      ) + self.config["target"]["pre_sql"]
         if generate_sql:
             return script
         else:
@@ -301,7 +302,8 @@ class BaseETLJob:
         if "post_sql" not in self.config["target"]:
             script = ""
         else:
-            script = ("--%s\n" % self.to_datasource.name) + self.config["target"]["post_sql"]
+            script = ("--%s\n" % self.to_datasource.name
+                      ) + self.config["target"]["post_sql"]
         if generate_sql:
             return script
         else:
@@ -325,7 +327,7 @@ class BaseETLJob:
         #  + operation happens
         #  + target post-sql
         #  + clean up: temp tables, temp views, etc
-    
+
         scripts = [
             self.step_01_source_pre_sql(generate_sql=True),
             self.step_02_create_reference_views(generate_sql=True),
