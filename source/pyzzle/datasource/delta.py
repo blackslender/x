@@ -91,7 +91,7 @@ class DeltaDataSource(BaseDataSource):
         writer = df.write
         writer = writer.format(self.format)
         writer = writer.mode(mode)
-        writer = reduce(lambda w, c: w.option(c, options[c]))
+        writer = reduce(lambda w, c: w.option(c, options[c]), options)
 
         save_mode = save_model.lower()
         if save_mode == "table":
