@@ -1,11 +1,11 @@
-import pyzzle
+from .base_datasource import BaseDataSource
 import pyspark
 from pyspark.sql import DataFrame
 from functools import reduce
 from delta.tables import DeltaTable
 
 
-class DeltaDataSource(pyzzle.datasource.BaseDataSource):
+class DeltaDataSource(BaseDataSource):
     def __init__(self, spark_session: pyspark.sql.SparkSession = None):
         '''Delta Lake datasource
 
