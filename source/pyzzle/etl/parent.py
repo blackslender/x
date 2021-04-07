@@ -126,7 +126,7 @@ class BaseETLJob:
 
     # Script executor
 
-    def execute_script(self, script):
+    def execute_sql(self, script):
         '''Executes an sql-script from databricks' sparksession.
         
         Execute an sql-script from spark session. Users are responsible to validate this script.
@@ -214,7 +214,7 @@ class BaseETLJob:
         if generate_sql:
             return script
         else:
-            return self.execute_script(script)
+            return self.execute_sql(script)
 
     def step_03_create_source_view(self, generate_sql=False):
         ''' Creates temp view represents the source query
@@ -292,7 +292,7 @@ class BaseETLJob:
         if generate_sql:
             return script
         else:
-            return self.to_datasource.execute_script(script)
+            return self.to_datasource.execute_sql(script)
 
     def step_06_operate(self, generate_sql=False):
         """TODO: Override this method based on the operation."""
