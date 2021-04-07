@@ -4,68 +4,67 @@ import yaml
 import re
 import pyspark
 
+def init_etl_job(config_yaml_filepath: str, params: dict = {}):
+    '''Creates ETL job object related to configuration file.
+
+    This method should be used to create ETL job objects instead of direct constructor.
+
+    Args:
+        config_yaml_filepath: Path to yaml config file. 
+        params: 
+            dict of (param_name: param_value) which is dynamic parameters for job config.
+            Dynamic parameters could be placed in job config as '${param_name}'
+
+    Returns:
+        An ETL job object (one of its sub-classes object, related to the config's operation).
+
+    Raises:
+        Exception: Some parameter(s) are not provided.
+        Exception: 'target - operation' key must exist in job config.
+        Exception: Unexpected operation.
+    '''
+
+    with open(config_yaml_filepath, "r") as f:
+        raw_config = f.read()
+        for key in params:
+            raw_config = raw_config.replace(f"${{{key}}}", params[key])
+        config = yaml.safe_load(raw_config)
+
+    # Make sure that all parameters are provided
+    # TODO: move this to validation
+    def get_required_params(text):
+        param_ex = r"\$\{[A-Za-z_]+[A-Za-z0-9_]*\}"
+        all_params = list(
+            map(lambda x: x[2:-1], re.findall(param_ex, text)))
+        return all_params
+
+    if len(get_required_params(config_yaml_filepath)) > 0:
+        raise Exception(
+            "All parameters should be provided. Please provide " +
+            str(get_required_params(config_yaml_filepath)))
+
+    # All config key should be lowercase
+    for key in list(config.keys()):
+        config[key.lower()] = config[key]
+
+    try:
+        operation = config["target"]["operation"]
+    except KeyError as e:
+        raise KeyError("The target - operation key is required for a job.")
+
+    if operation.lower() == "overwrite":
+        return pyzzle.etl.OverwriteETLJob(config, params=params)
+    if operation.lower() in ["append", "insert"]:
+        return pyzzle.etl.AppendETLJob(config, params=params)
+    elif operation.lower() == "update":
+        return pyzzle.etl.UpdateETLJob(config, params=params)
+    elif operation.lower() == "upsert":
+        return pyzzle.etl.UpsertETLJob(config, params=params)
+    else:
+        raise ValueError("Unexpected oparation '%s'" % operation)
+
 
 class BaseETLJob:
-    @staticmethod
-    def init_etl_job(config_yaml_filepath: str, params: dict = {}):
-        '''Creates ETL job object related to configuration file.
-
-        This method should be used to create ETL job objects instead of direct constructor.
-
-        Args:
-            config_yaml_filepath: Path to yaml config file. 
-            params: 
-                dict of (param_name: param_value) which is dynamic parameters for job config.
-                Dynamic parameters could be placed in job config as '${param_name}'
-
-        Returns:
-            An ETL job object (one of its sub-classes object, related to the config's operation).
-
-        Raises:
-            Exception: Some parameter(s) are not provided.
-            Exception: 'target - operation' key must exist in job config.
-            Exception: Unexpected operation.
-        '''
-
-        with open(config_yaml_filepath, "r") as f:
-            raw_config = f.read()
-            for key in params:
-                raw_config = raw_config.replace(f"${{{key}}}", params[key])
-            config = yaml.safe_load(raw_config)
-
-        # Make sure that all parameters are provided
-        # TODO: move this to validation
-        def get_required_params(text):
-            param_ex = r"\$\{[A-Za-z_]+[A-Za-z0-9_]*\}"
-            all_params = list(
-                map(lambda x: x[2:-1], re.findall(param_ex, text)))
-            return all_params
-
-        if len(get_required_params(config_yaml_filepath)) > 0:
-            raise Exception(
-                "All parameters should be provided. Please provide " +
-                str(get_required_params(config_yaml_filepath)))
-
-        # All config key should be lowercase
-        for key in list(config.keys()):
-            config[key.lower()] = config[key]
-
-        try:
-            operation = config["target"]["operation"]
-        except KeyError as e:
-            raise KeyError("The target - operation key is required for a job.")
-
-        if operation.lower() == "overwrite":
-            return pyzzle.etl.OverwriteETLJob(config, params=params)
-        if operation.lower() in ["append", "insert"]:
-            return pyzzle.etl.AppendETLJob(config, params=params)
-        elif operation.lower() == "update":
-            return pyzzle.etl.UpdateETLJob(config, params=params)
-        elif operation.lower() == "upsert":
-            return pyzzle.etl.UpsertETLJob(config, params=params)
-        else:
-            raise ValueError("Unexpected oparation '%s'" % operation)
-
     def __init__(self, config, params={}):
         r'''DO NOT USE CONSTRUCTOR TO CREATE JOB . 
         
