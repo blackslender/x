@@ -103,6 +103,11 @@ class BaseETLJob:
                 "Datasource %s not found" %
                 self.config["config"]["datasource"])
 
+        if "query" not in self.config["source"] and "table" in self.config[
+                "source"]:
+            self.config["source"]["query"] = "SELECT * FROM {}".format(
+                self.config["source"]["table"])
+
         # TODO: Complete the validation module
         # For now, it's temporarily disabled
         # pyzzle.JobConfigValidator(
