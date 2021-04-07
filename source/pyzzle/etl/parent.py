@@ -284,15 +284,17 @@ class BaseETLJob:
             If generate_sql=True: return the sql-script related to this step (without executing).
             Else: return the pre-sql query result as SparkDataFrame
         '''
-        if "pre_sql" not in self.config["target"]:
-            script = ""
-        else:
-            script = ("--%s\n" % self.to_datasource.name
-                      ) + self.config["target"]["pre_sql"]
         if generate_sql:
-            return script
+            if "pre_sql" not in self.config["target"]:
+                return ""
+            else:
+                return self.config["target"]["pre_sql"]
         else:
-            return self.to_datasource.execute_sql(script)
+            if "pre_sql" in self.config["target"]:
+                return self.from_datasource.execute_sql(
+                    self.config["target"]["pre_sql"])
+            else:
+                return None
 
     def step_06_operate(self, generate_sql=False):
         """TODO: Override this method based on the operation."""
@@ -309,15 +311,17 @@ class BaseETLJob:
             If generate_sql=True: return the sql-script related to this step (without executing).
             Else: return the post-sql query result as SparkDataFrame
         '''
-        if "post_sql" not in self.config["target"]:
-            script = ""
-        else:
-            script = ("--%s\n" % self.to_datasource.name
-                      ) + self.config["target"]["post_sql"]
         if generate_sql:
-            return script
+            if "post_sql" not in self.config["target"]:
+                return ""
+            else:
+                return self.config["target"]["post_sql"]
         else:
-            return self.to_datasource.execute_sql(script)
+            if "post_sql" in self.config["target"]:
+                return self.from_datasource.execute_sql(
+                    self.config["target"]["post_sql"])
+            else:
+                return None
 
     def step_08_clean(self, generate_sql=False):
         # There is no need to remove temp views since they belong to a single session only.
