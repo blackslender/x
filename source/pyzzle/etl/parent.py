@@ -170,7 +170,7 @@ class BaseETLJob:
         if generate_sql:
             return script
         else:
-            return self.from_datasource.execute_sql_script(script)
+            return self.from_datasource.execute_sql(script)
 
     def step_02_create_reference_views(self, generate_sql=False):
         ''' Creates temp views related to reference table paths from source config
@@ -237,7 +237,7 @@ class BaseETLJob:
         if generate_sql:
             return script
         else:
-            source_df = self.from_datasource.execute_sql_script(
+            source_df = self.from_datasource.execute_sql(
                 self.config["source"]["query"])
             source_df.createOrReplaceTempView("__source_view")
 
@@ -260,7 +260,7 @@ class BaseETLJob:
         if generate_sql:
             return script
         else:
-            return self.from_datasource.execute_sql_script(script)
+            return self.from_datasource.execute_sql(script)
 
     def step_05_target_pre_sql(self, generate_sql=False):
         '''Executes job target side pre-sql
@@ -307,7 +307,7 @@ class BaseETLJob:
         if generate_sql:
             return script
         else:
-            return self.to_datasource.execute_sql_script(script)
+            return self.to_datasource.execute_sql(script)
 
     def step_08_clean(self, generate_sql=False):
         # There is no need to remove temp views since they belong to a single session only.
