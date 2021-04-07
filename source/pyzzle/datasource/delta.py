@@ -66,7 +66,7 @@ class DeltaDataSource(BaseDataSource):
             self,
             df: DataFrame,
             mode: str,
-            target: str,  # Table name or path
+            location: str,  # Table name or path
             options: dict = {},
             save_mode: str = "table",  # 'table' or 'path'
     ):
@@ -77,13 +77,13 @@ class DeltaDataSource(BaseDataSource):
         Args:
             df: DataFrame, the source dataframe to write.
             mode: 'append'/'insert' or 'overwrite'
-            target: table name (if save_mode is table) or path (if save_mode is path) to write to.
+            location: table name (if save_mode is table) or path (if save_mode is path) to write to.
             options: dict, each key - value pair is a write option.
             save_mode: 'table' or 'path'
         '''
         super(DeltaDataSource, self).write(df,
                                            mode,
-                                           target,
+                                           location,
                                            options=options,
                                            save_mode=save_mode)
         mode = mode.lower()
@@ -95,29 +95,28 @@ class DeltaDataSource(BaseDataSource):
 
         save_mode = save_mode.lower()
         if save_mode == "table":
-            writer.saveAsTable(target)
+            writer.saveAsTable(location)
         elif save_mode == "path":
-            writer.save(path)
+            writer.save(location)
         else:
             raise datasource.DataSourceException("Invalid save_mode %s" % mode)
 
     def merge(
             self,
             df: DataFrame,
-            target: str,
+            location: str,
             condition: str,  # Only supports SQL-like string condition
             match_update_dict: dict,  # "target_column": "expression"
-            not_match_insert_dict:
-        dict = None,  # Leave None for update operation\
-            target_mode: str = 'table'):
-        '''Merge a dataframe to target table.
+            not_match_insert_dict: dict = None,
+            save_mode: str = 'table'):
+        '''Merge a dataframe to target table or path.
 
         This merge operation can represent both update and upsert operation.
         Source and target table is defaultly alias-ed as 'SRC' and 'TGT'. This could be used in condition string and update/insert expressions.
         Args:
             df (DataFrame): The source dataframe to write.
             target_mode (str): 'table' or 'path'
-            target (str): The table name or path to be merge into.
+            location (str): The table name or path to be merge into.
             condition (str): The condition in SQL-like string form.
             match_update_dict (dict): Contains ("target_column": "expression"). 
                 This represents the updated value if matched.
@@ -134,9 +133,9 @@ class DeltaDataSource(BaseDataSource):
                           not_match_insert_dict=not_match_insert_dict)
         target_mode = target_mode.lower()
         if target_mode == "table":
-            target_table = DeltaTable.forName(self.spark, target)
+            target_table = DeltaTable.forName(self.spark, location)
         elif target_mode == "path":
-            target_table = DeltaTable.forPath(self.spark, target)
+            target_table = DeltaTable.forPath(self.spark, location)
         else:
             raise ValueError("target_mode should be 'path' or 'table'.")
 
