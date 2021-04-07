@@ -94,14 +94,14 @@ class BaseETLJob:
         else:
             raise pyzzle.datasource.DataSourceException(
                 "Datasource %s not found" %
-                self.config["config"]["datasource"])
+                self.config["source"]["datasource"])
 
-        if self.config["source"]["datasource"].lower() == "delta":
-            self.from_datasource = pyzzle.datasource.DeltaDataSource()
+        if self.config["target"]["datasource"].lower() == "delta":
+            self.to_datasource = pyzzle.datasource.DeltaDataSource()
         else:
             raise pyzzle.datasource.DataSourceException(
                 "Datasource %s not found" %
-                self.config["config"]["datasource"])
+                self.config["target"]["datasource"])
 
         if "query" not in self.config["source"] and "table" in self.config[
                 "source"]:
