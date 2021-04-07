@@ -1,11 +1,9 @@
-from pyzzle import BaseETLJob
+import pyzzle
 
 
-class DataLoaderAppend(BaseETLJob):
+class AppendETLJob(pyzzle.etl.BaseETLJob):
     def __init__(self, config, spark=None, params={}):
-        super(DataLoaderAppend, self).__init__(config,
-                                               spark=spark,
-                                               params=params)
+        super(AppendETLJob, self).__init__(config, spark=spark, params=params)
 
         # Both 'insert' and 'append' operation are allowed
         assert self.config["target"]["operation"] in ["insert", "append"]

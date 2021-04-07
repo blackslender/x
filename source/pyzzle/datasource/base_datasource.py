@@ -1,4 +1,4 @@
-import datasource
+import pyzzle
 import abc
 import pyspark
 import functools
@@ -10,23 +10,19 @@ class DataSourceException(Exception):
     pass
 
 
-class BaseDataSource(ABC):
-    @abstractmethod
+class BaseDataSource(abc.ABC):
     def __init__(self):
         if type(self) is BaseDataSource:
             raise NotImplementedError
 
-    @abstractmethod
     def execute_sql(self, script: str):
         if type(self) is BaseDataSource:
             raise NotImplementedError
 
-    @abstractmethod
     def read(self, table_name):
         if type(self) is BaseDataSource:
             raise NotImplementedError
 
-    @abstractmethod
     def write(
             self,
             df: DataFrame,
@@ -38,7 +34,6 @@ class BaseDataSource(ABC):
         if type(self) is BaseDataSource:
             raise NotImplementedError
 
-    @abstractmethod
     def merge(
         self,
         df: DataFrame,

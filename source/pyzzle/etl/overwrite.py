@@ -1,12 +1,12 @@
-from pyzzle import BaseETLJob
+import pyzzle
 import warnings
 
 
-class OverwriteETLJob(BaseETLJob):
+class OverwriteETLJob(pyzzle.etl.BaseETLJob):
     def __init__(self, config, spark=None, params={}):
         super(OverwriteETLJob, self).__init__(config,
-                                                  spark=spark,
-                                                  params=params)
+                                              spark=spark,
+                                              params=params)
         assert self.config["target"]["operation"] == "overwrite"
 
     def _get_target_table_partition_columns(self, table_name):

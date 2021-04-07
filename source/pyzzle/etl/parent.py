@@ -7,10 +7,10 @@ import pyspark
 
 class BaseETLJob:
     @staticmethod
-    def init_dataloader(config_yaml_filepath: str, params: dict = {}):
-        '''Creates dataloader object related to configuration file.
+    def init_etl_job(config_yaml_filepath: str, params: dict = {}):
+        '''Creates ETL job object related to configuration file.
 
-        This method should be used to create DataLoader objects instead of direct constructor.
+        This method should be used to create ETL job objects instead of direct constructor.
 
         Args:
             config_yaml_filepath: Path to yaml config file. 
@@ -19,22 +19,13 @@ class BaseETLJob:
                 Dynamic parameters could be placed in job config as '${param_name}'
 
         Returns:
-            A DataLoader object (one of its sub-class object, related to the config's operation).
+            An ETL job object (one of its sub-classes object, related to the config's operation).
 
         Raises:
-            Exception: Cannot get active spark session.
             Exception: Some parameter(s) are not provided.
             Exception: 'target - operation' key must exist in job config.
             Exception: Unexpected operation.
         '''
-
-        # Update on 29/3: spark is no longer required, default session can be obtained by
-        spark = pyspark.sql.session.SparkSession.getActiveSession()
-
-        if spark is None:
-            raise Exception(
-                "Cannot get active spark session, please check spark environment."
-            )
 
         with open(config_yaml_filepath, "r") as f:
             raw_config = f.read()
@@ -43,6 +34,7 @@ class BaseETLJob:
             config = yaml.safe_load(raw_config)
 
         # Make sure that all parameters are provided
+        # TODO: move this to validation
         def get_required_params(text):
             param_ex = r"\$\{[A-Za-z_]+[A-Za-z0-9_]*\}"
             all_params = list(
@@ -64,21 +56,21 @@ class BaseETLJob:
             raise KeyError("The target - operation key is required for a job.")
 
         if operation.lower() == "overwrite":
-            return pyzzle.OverwriteETLJob(config, spark=spark, params=params)
+            return pyzzle.etl.OverwriteETLJob(config, params=params)
         if operation.lower() in ["append", "insert"]:
-            return pyzzle.DataLoaderAppend(config, spark=spark, params=params)
+            return pyzzle.etl.AppendETLJob(config, params=params)
         elif operation.lower() == "update":
-            return pyzzle.UpdateETLJob(config, spark=spark, params=params)
+            return pyzzle.etl.UpdateETLJob(config, params=params)
         elif operation.lower() == "upsert":
-            return pyzzle.UpsertETLJob(config, spark=spark, params=params)
+            return pyzzle.etl.UpsertETLJob(config, params=params)
         else:
             raise ValueError("Unexpected oparation '%s'" % operation)
 
-    def __init__(self, config, spark=None, params={}):
-        r'''DO NOT USE CONSTRUCTOR TO CREATE DATALOADER OBJECT. 
+    def __init__(self, config, params={}):
+        r'''DO NOT USE CONSTRUCTOR TO CREATE JOB . 
         
-        Instead, use static 'init_dataloader' as an object factory.
-        When overwriting this constructor, the parent constructor should be called as super(DataLoaderChildClass, self).\_\_init\_\_(config, spark, params)
+        Instead, use static 'init_etl_job' as an object factory.
+        When overwriting this constructor, the parent constructor should be called as super(ChildETLJob, self).\_\_init\_\_(config, params)
 
         Args:
             config: dict of job config, which is parsed from yml config file.
@@ -89,15 +81,28 @@ class BaseETLJob:
         Returns: None
 
         Raises:
-            Exception: DataLoader class is abstract.
+            Exception: BaseETLJob class is abstract.
         '''
         if type(self) is BaseETLJob:
-            raise Exception("DataLoader class is abstract.")
+            raise Exception("BaseETLJob class is abstract.")
 
         self.config = config
         self.version = self.config["version"]
-        self.spark = spark
         self.params = params
+
+        if self.config["source"]["datasource"].lower() == "delta":
+            self.from_datasource = pyzzle.datasources.DeltaDataSource()
+        else:
+            raise pyzzle.datasources.DataSourceException(
+                "Datasource %s not found" %
+                self.config["config"]["datasource"])
+
+        if self.config["source"]["datasource"].lower() == "delta":
+            self.from_datasource = pyzzle.datasources.DeltaDataSource()
+        else:
+            raise pyzzle.datasources.DataSourceException(
+                "Datasource %s not found" %
+                self.config["config"]["datasource"])
 
         # TODO: Complete the validation module
         # For now, it's temporarily disabled

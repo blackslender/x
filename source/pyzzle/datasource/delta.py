@@ -1,10 +1,11 @@
-import datasource
+import pyzzle
 import pyspark
 from pyspark.sql import DataFrame
 from functools import reduce
+from delta.tables import DeltaTable
 
 
-class DeltaDataSource(datasource.BaseDataSource):
+class DeltaDataSource(pyzzle.datasource.BaseDataSource):
     def __init__(self, spark_session: pyspark.sql.SparkSession = None):
         '''Delta Lake datasource
 
@@ -101,22 +102,47 @@ class DeltaDataSource(datasource.BaseDataSource):
             raise datasource.DataSourceException("Invalid save_mode %s" % mode)
 
     def merge(
-        self,
-        df: DataFrame,
-        target: str,
-        condition: str,  # Only support SQL-like string condition
-        match_update_dict: dict,  # "target_column": "expression"
-        not_match_insert_dict: dict = None  # Leave None for update operation
-    ):
+            self,
+            df: DataFrame,
+            target: str,
+            condition: str,  # Only supports SQL-like string condition
+            match_update_dict: dict,  # "target_column": "expression"
+            not_match_insert_dict:
+        dict = None,  # Leave None for update operation\
+            target_mode: str = 'table'):
         '''Merge a dataframe to target table.
 
         This merge operation can represent both update and upsert operation.
-
+        Source and target table is defaultly alias-ed as 'SRC' and 'TGT'. This could be used in condition string and update/insert expressions.
         Args:
-            df: DataFrame, the source dataframe to write.
-            target: str, the table name or path to be merge into.
-            condition: str, the condition in SQL-like string form.
-            match_update_dict: dict, contains ("target_column": "expression"). This represents the updated value if matched.
-            not_match_insert_dict: dict, contains ("target_column": "expression"). This represents the inserted value if not matched. Other columns which are not specified shall be null.
+            df (DataFrame): The source dataframe to write.
+            target_mode (str): 'table' or 'path'
+            target (str): The table name or path to be merge into.
+            condition (str): The condition in SQL-like string form.
+            match_update_dict (dict): Contains ("target_column": "expression"). 
+                This represents the updated value if matched.
+                NOTE: "target_column"'s come without schema ("SRC" or "TGT").
+            not_match_insert_dict (dict): Contains ("target_column": "expression"). 
+                This represents the inserted value if not matched. 
+                Other columns which are not specified shall be null.
+                NOTE: "target_column"'s come without schema ("SRC" or "TGT").
         '''
-        #TODO
+        super(DeltaDataSource,
+              self).merge(df,
+                          condition,
+                          match_update_dict,
+                          not_match_insert_dict=not_match_insert_dict)
+        target_mode = target_mode.lower()
+        if target_mode == "table":
+            target_table = DeltaTable.forName(self.spark, target)
+        elif target_mode == "path":
+            target_table = DeltaTable.forPath(self.spark, target)
+        else:
+            raise ValueError("target_mode should be 'path' or 'table'.")
+
+        merger = target_table.alias("TGT").merge(df.alias("SRC"), condition)
+        merger = merger.whenMatchedUpdate(set=match_update_dict)
+        if not_match_insert_dict is not None:
+            merger = merger.whenNotMatchedInsert(values=not_match_insert_dict)
+
+        merger.execute()

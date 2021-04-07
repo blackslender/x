@@ -4,3 +4,4 @@ __pycache__
 draft.py
 dist
 *egg-info
+draft*

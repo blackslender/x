@@ -1,4 +1,4 @@
-from pyzzle import BaseETLJob
+import pyzzle
 
 
 def generate_sql_condition_string(list_of_column, link_char_parameter):
@@ -49,7 +49,7 @@ def upsert(job_config):
     return merge_sql_string
 
 
-class UpdateETLJob(BaseETLJob):
+class UpdateETLJob(pyzzle.etl.BaseETLJob):
     def __init__(self, config, spark=None, params={}):
         super(UpdateETLJob, self).__init__(config, spark=spark, params=params)
         # # TODO
@@ -70,7 +70,7 @@ class UpdateETLJob(BaseETLJob):
             return self.execute_script(script)
 
 
-class UpsertETLJob(BaseETLJob):
+class UpsertETLJob(pyzzle.etl.BaseETLJob):
     def __init__(self, config, spark=None, params={}):
         super(UpsertETLJob, self).__init__(config, spark=spark, params=params)
         # # TODO
