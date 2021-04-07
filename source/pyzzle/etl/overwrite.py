@@ -8,8 +8,9 @@ class OverwriteETLJob(BaseETLJob):
         assert self.config["target"]["operation"] == "overwrite"
 
     def _get_target_table_partition_columns(self, table_name):
+        # TODO: This only work on delta target table. Add supports for others here
         try:
-            return self.execute_script("SHOW PARTITIONS " + table_name).columns
+            return self.execute_sql("SHOW PARTITIONS " + table_name).columns
         except Exception as e:
             if "not partitioned" in str(e):
                 return []
@@ -17,7 +18,8 @@ class OverwriteETLJob(BaseETLJob):
                 raise e
 
     def _generate_key_matching_condition_string(self):
-        source_table = self.execute_script("SELECT  * FROM __source_view")
+
+        source_table = self.execute_sql("SELECT  * FROM __source_view")
         partition_columns = self._get_target_table_partition_columns(
             self.config["target"]["table"])
         distinct_partition_values = list(
@@ -56,7 +58,7 @@ class OverwriteETLJob(BaseETLJob):
             ]
             return "\n".join(script)
         else:
-            source_table = self.execute_script("SELECT * FROM __source_view")
+            source_table = self.execute_sql("SELECT * FROM __source_view")
             condition_string = self._generate_key_matching_condition_string()
             source_table.write\
                 .format("delta") \
