@@ -27,7 +27,7 @@ def merge(self, insert_when_not_matched):
         self.spark.table("__source_view"),
         location,
         condition=merge_condition,
-        match_update_dict = dict(map(lambda x: (x,x), self.config["target"]["update_column"])),
+        match_update_dict = dict(map(lambda x: (x, "SRC." + x), self.config["target"]["update_column"])),
         insert_when_not_matched = insert_when_not_matched,
         save_mode = save_mode
     )
