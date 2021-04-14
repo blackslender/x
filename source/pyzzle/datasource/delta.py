@@ -3,7 +3,7 @@ import pyspark
 from pyspark.sql import DataFrame
 from functools import reduce
 from delta.tables import DeltaTable
-
+from pyspark.sql import functions as F, types as T
 
 class DeltaDataSource(BaseDataSource):
     def __init__(self, spark_session: pyspark.sql.SparkSession = None):
