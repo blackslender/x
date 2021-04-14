@@ -107,7 +107,7 @@ class DeltaDataSource(BaseDataSource):
             location: str,
             condition: str,  # Only supports SQL-like string condition
             match_update_dict: dict,  # "target_column": "expression"
-            not_match_insert_dict: dict = None,
+            insert_when_not_match: False # Set to True for upsert
             save_mode: str = 'table'):
         '''Merge a dataframe to target table or path.
 
@@ -130,7 +130,7 @@ class DeltaDataSource(BaseDataSource):
               self).merge(df,
                           condition,
                           match_update_dict,
-                          not_match_insert_dict=not_match_insert_dict)
+                          insert=)
         save_mode = save_mode.lower()
         if save_mode == "table":
             target_table = DeltaTable.forName(self.spark, location)
@@ -141,7 +141,7 @@ class DeltaDataSource(BaseDataSource):
 
         merger = target_table.alias("TGT").merge(df.alias("SRC"), condition)
         merger = merger.whenMatchedUpdate(set=match_update_dict)
-        if not_match_insert_dict is not None:
-            merger = merger.whenNotMatchedInsert(values=not_match_insert_dict)
+        if insert_when_not_match:
+            merger = merger.whenNotMatchedInsertAll()
 
         merger.execute()

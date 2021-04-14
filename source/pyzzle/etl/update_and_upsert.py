@@ -1,85 +1,52 @@
 from .parent import BaseETLJob
 
+def generate_merge_condition(primary_key_list, base_condition):
+    if base_condition is None: base_condition = "1=1"
+    link_char = " AND "
+    return base_condition \
+        + link_char \
+        + link_char.join(map(lambda x: "TGT.{} = SRC.{}".format(x, x),  + list_of_column))
 
-def generate_sql_condition_string(list_of_column, link_char_parameter):
-    return (" " + link_char_parameter + " ").join(
-        map(lambda x: "TGT.{} = SRC.{}".format(x, x), list_of_column))
-
-
-def generate_column_list_string(list_of_column, prefix):
-    return ", ".join(map(lambda x: "{}.{}".format(prefix, x), list_of_column))
-
-
-def update(job_config):
-
-    if "table" in job_config["target"]:
-        target_table = job_config["target"]["table"]
-    else:
-        target_table = "delta.`{}`".format(job_config["target"]["path"])
+def merge(self, insert_when_not_matched):
+    if "table" in self.config["target"]:
+        target_table = self.config["target"]["table"]
+    elif "path" in self.config["target"]:
+        target_table = "delta.`{}`".format(self.config["target"]["path"])
 
     if "where_statement_on_table" not in job_config["target"]:
-        job_config["target"]["where_statement_on_table"] = "1=1"
-    # part0_sql = '''CREATE OR REPLACE TEMPORARY VIEW __target_view AS TABLE {};\n'''.format(
-    #     )
-    part1_sql = '''MERGE INTO {} AS TGT \nUSING __source_view AS SRC \nON '''.format(
-        target_table)
-    part2_sql = job_config["target"]["where_statement_on_table"] + ' AND '
-    part3_sql = generate_sql_condition_string(
-        job_config['target']['primary_key_column'], "AND")
-    part4_sql = '''\nWHEN MATCHED THEN \n\tUPDATE SET '''
-    part5_sql = generate_sql_condition_string(
-        job_config['target']['update_column'], ",")
+        self.config["target"]["where_statement_on_table"] = "1=1"
+    
+    merge_condition = generate_merge_condition(
+        self.config["target"]["primary_key_column"],
+        self.config["target"]["where_statement_on_table"]
+    )
 
-    update_sql_string = part1_sql + \
-        part2_sql + part3_sql + part4_sql + part5_sql
-    # print(update_sql_string)
-    return update_sql_string
-
-
-def upsert(job_config):
-    update_sql_string = update(job_config)
-
-    insert_sql_string = '''\nWHEN NOT MATCHED THEN \n\tINSERT ({str1}) VALUES ({str2}) '''.format(
-        str1=generate_column_list_string(job_config["target"]["update_column"],
-                                         "TGT"),
-        str2=generate_column_list_string(job_config["target"]["update_column"],
-                                         "SRC"))
-    merge_sql_string = update_sql_string + insert_sql_string
-    # print(merge_sql_string)
-    return merge_sql_string
-
+    return self.to_datasource.merge(
+        self.spark.table("__source_view"),
+        target_table,
+        condition=merge_condition,
+        match_update_dict = dict(map(lambda x: (x,x), self.config["target"]["update_column"])),
+        insert_when_not_matched = insert_when_not_matched
+    )
 
 class UpdateETLJob(BaseETLJob):
     def __init__(self, config, params={}):
         super(UpdateETLJob, self).__init__(config, params=params)
-        # # TODO
         assert self.config["target"]["operation"] == "update"
         assert "primary_key_column" in self.config["target"]
         assert "update_column" in self.config["target"]
 
     def step_06_operate(self):
-        if "table" in self.config["target"]:
-            target_table = self.config["target"]["table"]
-        elif "path" in self.config["target"]:
-            target_table = "delta.`{}`".format(self.config["target"]["path"])
-
-        script = update(self.config)
-        return self.to_datasource.sql(script)
+        return merge(self, insert_when_not_matched=False)
 
 
 class UpsertETLJob(BaseETLJob):
     def __init__(self, config, params={}):
         super(UpsertETLJob, self).__init__(config, params=params)
-        # # TODO
         assert self.config["target"]["operation"] == "upsert"
         assert "primary_key_column" in self.config["target"]
         assert "update_column" in self.config["target"]
 
     def step_06_operate(self):
-        if "table" in self.config["target"]:
-            target_table = self.config["target"]["table"]
-        elif "path" in self.config["target"]:
-            target_table = "delta.`{}`".format(self.config["target"]["path"])
-
-        script = upsert(self.config)
-        return self.to_datasource.sql(script)
+        return merge(self, insert_when_not_matched=True)
+        

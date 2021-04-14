@@ -40,7 +40,7 @@ class BaseDataSource(abc.ABC):
         df: DataFrame,
         condition: str,  # Only support SQL-like string condition
         match_update_dict: dict,  # "target_column": "expression"
-        not_match_insert_dict: dict = None  # Leave None for update operation
+        insert_when_not_match: dict = None,  # Leave None for update operation
     ):
         if type(self) is BaseDataSource:
             raise NotImplementedError
