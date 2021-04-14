@@ -144,10 +144,6 @@ class DeltaDataSource(BaseDataSource):
         merger = merger.whenMatchedUpdate(set=match_update_dict)
 
         if insert_when_not_matched:
-            # For TGT column that does not appear in SRC, use NULL
-            insert_dict = {
-                **match_update_dict
-            }
-            merger = merger.whenNotMatchedInsert()
+            merger = merger.whenNotMatchedInsert(values = match_update_dict)
 
         merger.execute()
