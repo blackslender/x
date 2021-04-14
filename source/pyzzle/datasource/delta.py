@@ -147,7 +147,7 @@ class DeltaDataSource(BaseDataSource):
         if insert_when_not_matched:
             # For TGT column that does not appear in SRC, use NULL
             target_columns = target_table.toDF().columns
-            for column in target_columns
+            for column in target_columns:
                 if column not in df.columns:
                     df = df.withColumn(column, F.lit(None))
             df = df.select(*(target_columns))
