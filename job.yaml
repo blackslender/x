@@ -1,0 +1,8 @@
+version: 0
+source:
+  datasource: delta
+  query: SELECT 1 AS C1
+target:
+  datasource: delta
+  table: dummy_table
+  operation: append

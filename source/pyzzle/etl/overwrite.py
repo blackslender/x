@@ -18,7 +18,6 @@ class OverwriteETLJob(BaseETLJob):
                 raise e
 
     def _generate_key_matching_condition_string(self):
-
         source_table = self.execute_sql("SELECT  * FROM __source_view")
         partition_columns = self._get_target_table_partition_columns(
             self.config["target"]["table"])
@@ -49,9 +48,6 @@ class OverwriteETLJob(BaseETLJob):
             partition_cols = self._get_target_table_partition_columns(
                 target_table)
             script = [
-                "-- OVERWRITE operation is not supported in Databricks SQL. These query are for reference only."
-            ]
-            script = [
                 "INSERT OVERWRITE {target_table} PARTITION BY ({partition_cols}) SELECT * FROM __source_view"
                 .format(target_table=target_table,
                         partition_cols=", ".join(partition_cols))
@@ -66,12 +62,9 @@ class OverwriteETLJob(BaseETLJob):
             #     .option("replaceWhere", condition_string) \
             #     .saveAsTable(self.config["target"]["table"])
 
-            return self.to_datasource.write(source_df,
-                                            mode="overwrite",
-                                            options={
-                                                "replaceWhere": condition_string
-                                            },
-                                            location=location,
-                                            save_mode=save_mode)
-
-            
+            return self.to_datasource.write(
+                source_df,
+                mode="overwrite",
+                options={"replaceWhere": condition_string},
+                location=location,
+                save_mode=save_mode)

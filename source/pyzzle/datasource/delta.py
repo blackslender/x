@@ -27,7 +27,7 @@ class DeltaDataSource(BaseDataSource):
         self.spark = spark_session
         self.format = "delta"
 
-    def execute_sql(self, query):
+    def sql(self, query):
         '''Executes an SQL query from the source.
 
         Only atomic query (without semicolon) is allowed at the moment.
@@ -37,10 +37,10 @@ class DeltaDataSource(BaseDataSource):
             path: str, location of the path to read.
         Return: Spark Dataframe that is the result of the query.
         '''
-        super(DeltaDataSource, self).execute_sql(query)
+        super(DeltaDataSource, self).sql(query)
         return self.spark.sql(query)
 
-    def read(self, location, mode="table"):
+    def table(self, location, mode="table"):
         '''Reads data from a table or path
 
         Only one of 'table_name' or 'path' must be provided.

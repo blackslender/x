@@ -16,11 +16,11 @@ class BaseDataSource(abc.ABC):
         if type(self) is BaseDataSource:
             raise NotImplementedError
 
-    def execute_sql(self, script: str):
+    def sql(self, script: str):
         if type(self) is BaseDataSource:
             raise NotImplementedError
 
-    def read(self, table_name):
+    def table(self, table_name):
         if type(self) is BaseDataSource:
             raise NotImplementedError
 

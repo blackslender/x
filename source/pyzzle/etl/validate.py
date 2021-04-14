@@ -2,10 +2,6 @@ from functools import reduce
 import pyzzle
 
 
-class JobConfigException(Exception):
-    pass
-
-
 class JobConfigValidator:
     def __init__(self, dataloader, print_log=True):
         assert isinstance(dataloader, pyzzle.etl.BaseETLJob)
