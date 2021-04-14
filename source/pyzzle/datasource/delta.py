@@ -107,7 +107,7 @@ class DeltaDataSource(BaseDataSource):
             location: str,
             condition: str,  # Only supports SQL-like string condition
             match_update_dict: dict,  # "target_column": "expression"
-            insert_when_not_match: False # Set to True for upsert
+            insert_when_not_matched: False, # Set to True for upsert
             save_mode: str = 'table'):
         '''Merge a dataframe to target table or path.
 
