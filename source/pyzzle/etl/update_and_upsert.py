@@ -5,7 +5,7 @@ def generate_merge_condition(primary_key_list, base_condition):
     link_char = " AND "
     return base_condition \
         + link_char \
-        + link_char.join(map(lambda x: "TGT.{} = SRC.{}".format(x, x),  + list_of_column))
+        + link_char.join(map(lambda x: "TGT.{} = SRC.{}".format(x, x),  + primary_key_list))
 
 def merge(self, insert_when_not_matched):
     if "table" in self.config["target"]:
