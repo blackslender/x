@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="pyzzle-just-analytics",
-    version="0.0.1",
+    version="0.1.0",
     author="Example Author",
     author_email="van.vu@justanalytics.com",
     description="Python ETL support for Databricks Delta Lake",
