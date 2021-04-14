@@ -13,7 +13,7 @@ def merge(self, insert_when_not_matched):
     elif "path" in self.config["target"]:
         target_table = "delta.`{}`".format(self.config["target"]["path"])
 
-    if "where_statement_on_table" not in job_config["target"]:
+    if "where_statement_on_table" not in self.config["target"]:
         self.config["target"]["where_statement_on_table"] = "1=1"
     
     merge_condition = generate_merge_condition(
