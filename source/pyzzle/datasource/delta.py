@@ -142,7 +142,7 @@ class DeltaDataSource(BaseDataSource):
 
         merger = target_table.alias("TGT").merge(df.alias("SRC"), condition)
         merger = merger.whenMatchedUpdate(set=match_update_dict)
-        if insert_when_not_match:
+        if insert_when_not_matched:
             merger = merger.whenNotMatchedInsertAll()
 
         merger.execute()
