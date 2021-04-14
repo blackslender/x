@@ -10,10 +10,10 @@ def generate_merge_condition(primary_key_list, base_condition):
 def merge(self, insert_when_not_matched):
     if "table" in self.config["target"]:
         target_table = self.config["target"]["table"]
-        save_mode = table
+        save_mode = "table"
     elif "path" in self.config["target"]:
         target_table = "delta.`{}`".format(self.config["target"]["path"])
-        save_mode = path
+        save_mode = "path"
 
     if "where_statement_on_table" not in self.config["target"]:
         self.config["target"]["where_statement_on_table"] = "1=1"
