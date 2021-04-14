@@ -57,17 +57,14 @@ class UpdateETLJob(BaseETLJob):
         assert "primary_key_column" in self.config["target"]
         assert "update_column" in self.config["target"]
 
-    def step_06_operate(self, generate_sql=False):
+    def step_06_operate(self):
         if "table" in self.config["target"]:
             target_table = self.config["target"]["table"]
         elif "path" in self.config["target"]:
             target_table = "delta.`{}`".format(self.config["target"]["path"])
 
         script = update(self.config)
-        if generate_sql:
-            return script
-        else:
-            return self.execute_script(script)
+        return self.to_datasource.sql(script)
 
 
 class UpsertETLJob(BaseETLJob):
@@ -78,14 +75,11 @@ class UpsertETLJob(BaseETLJob):
         assert "primary_key_column" in self.config["target"]
         assert "update_column" in self.config["target"]
 
-    def step_06_operate(self, generate_sql=False):
+    def step_06_operate(self):
         if "table" in self.config["target"]:
             target_table = self.config["target"]["table"]
         elif "path" in self.config["target"]:
             target_table = "delta.`{}`".format(self.config["target"]["path"])
 
         script = upsert(self.config)
-        if generate_sql:
-            return script
-        else:
-            return self.execute_script(script)
+        return self.to_datasource.sql(script)

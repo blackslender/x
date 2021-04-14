@@ -145,7 +145,7 @@ class JobConfigValidator:
         '''
         job_config = job_config or self.dataloader.config
         try:
-            self.dataloader.execute_script(
+            self.dataloader.sql(
                 "show create table {table_name} ;".format(
                     table_name=job_config["target"]["table"]))
             return True
