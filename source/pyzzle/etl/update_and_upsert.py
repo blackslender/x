@@ -22,7 +22,10 @@ def merge(self, insert_when_not_matched):
         self.config["target"]["primary_key_column"],
         self.config["target"]["where_statement_on_table"]
     )
-    print("DEBUG FLAG: merge condition: ", merge_condition)
+    
+    # Include primary_key_column in update_column so that when not matched, these will be inserted also
+    self.config["target"]["update_column"] += self.config["target"]["primary_key_column"]
+    
     return self.to_datasource.merge(
         self.spark.table("__source_view"),
         location,

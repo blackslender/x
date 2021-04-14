@@ -143,14 +143,11 @@ class DeltaDataSource(BaseDataSource):
         merger = target_table.alias("TGT").merge(df.alias("SRC"), condition)
         merger = merger.whenMatchedUpdate(set=match_update_dict)
 
-
         if insert_when_not_matched:
             # For TGT column that does not appear in SRC, use NULL
-            target_columns = target_table.toDF().columns
-            for column in target_columns:
-                if column not in df.columns:
-                    df = df.withColumn(column, F.lit(None))
-            df = df.select(*(target_columns))
-            merger = merger.whenNotMatchedInsertAll()
+            insert_dict = {
+                **match_update_dict
+            }
+            merger = merger.whenNotMatchedInsert()
 
         merger.execute()
