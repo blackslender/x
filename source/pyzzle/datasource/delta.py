@@ -130,7 +130,8 @@ class DeltaDataSource(BaseDataSource):
               self).merge(df,
                           condition,
                           match_update_dict,
-                          insert=)
+                          insert_when_not_matched=insert_when_not_matched
+                          )
         save_mode = save_mode.lower()
         if save_mode == "table":
             target_table = DeltaTable.forName(self.spark, location)
