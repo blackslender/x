@@ -10,8 +10,10 @@ def generate_merge_condition(primary_key_list, base_condition):
 def merge(self, insert_when_not_matched):
     if "table" in self.config["target"]:
         target_table = self.config["target"]["table"]
+        save_mode = table
     elif "path" in self.config["target"]:
         target_table = "delta.`{}`".format(self.config["target"]["path"])
+        save_mode = path
 
     if "where_statement_on_table" not in self.config["target"]:
         self.config["target"]["where_statement_on_table"] = "1=1"
@@ -26,7 +28,8 @@ def merge(self, insert_when_not_matched):
         target_table,
         condition=merge_condition,
         match_update_dict = dict(map(lambda x: (x,x), self.config["target"]["update_column"])),
-        insert_when_not_matched = insert_when_not_matched
+        insert_when_not_matched = insert_when_not_matched,
+        save_mode = save_mode
     )
 
 class UpdateETLJob(BaseETLJob):
