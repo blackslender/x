@@ -170,7 +170,7 @@ class ReconJob:
                     or dict(joined.dtypes)[source2 + "_" + metric] in ("float", "double"):
 
                     def difference(number1, number2, error=1e-3):
-                        return (number1 - number2) / number2 < error
+                        return abs((number1 - number2) / number2) < error
 
                     joined = joined.withColumn(
                         "match_" + metric,
