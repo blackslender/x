@@ -86,7 +86,7 @@ class ReconJob:
         # - Add a new attribute to current job self.df["name"] = related dataframe
         self.datasource = dict()
         self.df = dict()
-        for name, config in self.config["data"].keys():
+        for name, config in self.config["data"].items():
             # Create data source
             datasource = pyzzle.datasource.init_datasource(
                 config["datasource"]
