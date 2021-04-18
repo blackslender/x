@@ -1,0 +1,24 @@
+version: 0
+group_by:
+  - C1
+data:
+  - name: source1
+    datasource: delta
+    query: SELECT 1 AS C1, 2 AS C2 # Either query or table or path (path only available with delta source)
+    metrics: # Metrics result should be in numeric format (float or int)
+      - sum_c2: sum(C2)
+      - avg_c2: avg(C2)
+
+  - name: source2
+    datasource: delta
+    query: SELECT 1 AS C1, 2 AS C2
+    metrics: # Same metrics (names) should be specified from each source (although the calculations are different)
+      - sum_c2: sum(C2)
+      - avg_c2: avg(C2) 
+
+  - name: source3
+    datasource: delta
+    query: SELECT 1 AS C1, 2 AS C2
+    metrics: # Same metrics (names) should be specified from each source (although the calculations are different)
+      - sum_c2: sum(C2)
+      - avg_c2: avg(C2)
