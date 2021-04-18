@@ -13,6 +13,8 @@ class DataSourceException(Exception):
 def init_datasource(source_type, spark=None):  # Change later
     if source_type == "delta":
         if spark is None:
+            spark = pyspark.sql.SparkSession.getActiveSession()
+        if spark is None:
             raise DataSourceException(
                 "For Delta datasource, please provide spark session that manages the Delta lake."
             )
