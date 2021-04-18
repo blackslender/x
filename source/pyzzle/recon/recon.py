@@ -1,15 +1,15 @@
 import pyzzle
 from functools import reduce
 
-class BaseReconJob:
 
+class BaseReconJob:
     def __init__(self, config_dict: dict, params: dict = dict()):
         # TODO:
         # - Validate config
         # - Create datasource objects related to each datasource
-        # 
+        #
 
-        self.config = config_dict'
+        self.config = config_dict
 
         # Validation
         source_id = 0
@@ -27,8 +27,11 @@ class BaseReconJob:
 
         # For each source, convert metrics from list of dict to a single dict of (name: expr)
         for name in self.config["data"]:
-            self.config["data"][name]["metrics"] = reduce(lambda x,y: {**x, **y}, self.config["data"][name]["metrics"])
-
+            self.config["data"][name]["metrics"] = reduce(
+                lambda x, y: {
+                    **x,
+                    **y
+                }, self.config["data"][name]["metrics"])
 
     def step_01_query(self):
         # TODO:
@@ -39,7 +42,9 @@ class BaseReconJob:
         self.df = dict()
         for name, config in self.config["data"]:
             # Create data source
-            datasource = pyzzle.datasource.init_datasource(config["datasource"]) # In the future, put other configurations here
+            datasource = pyzzle.datasource.init_datasource(
+                config["datasource"]
+            )  # In the future, put other configurations here
             if "query" in config:
                 df = datasource.sql(config["query"])
             elif "table" in config:
@@ -47,7 +52,9 @@ class BaseReconJob:
             elif "path" in config:
                 df = datasource.table(config["path"], mode="path")
             else:
-                raise Exception("Either 'query', 'table' or 'path' should be provided in each recon's element")
+                raise Exception(
+                    "Either 'query', 'table' or 'path' should be provided in each recon's element"
+                )
 
             self.datasource[name] = datasource
             self.df[name] = df
@@ -58,7 +65,7 @@ class BaseReconJob:
         # - It is simpler to calculate the group-by and aggregation using SQL syntax since the input is in SQL expressions
         # - Add a new attribute to current job self.agg["name"] = aggregated dataframe
         self.agg = dict()
-        
+
         for name, config in self.config["data"]:
             group_by = self.config["group_by"]
             agg = self.df[name].groupBy(*group_by)
@@ -81,32 +88,55 @@ class BaseReconJob:
 
         # Rename every metric with prefix as source_metricname
         for source, agg in self.agg.items():
-            metric_cols = list(filter(lambda x: x not in group_by, agg.columns))
-            self.agg[source] = reduce(lambda df, metric: df.withColumnRenamed(metric, source + "_" + metric), metric_cols, agg)
-        
-        # Join
-        joined = reduce(lambda x,y: x.join(y, how="full", on=group_by), self.agg.values())
+            metric_cols = list(filter(lambda x: x not in group_by,
+                                      agg.columns))
+            self.agg[source] = reduce(
+                lambda df, metric: df.withColumnRenamed(
+                    metric, source + "_" + metric), metric_cols, agg)
 
-        # Calculate differences if there are only two sources 
+        # Join
+        joined = reduce(lambda x, y: x.join(y, how="full", on=group_by),
+                        self.agg.values())
+
+        # Calculate differences if there are only two sources
         if len(self.agg) == 2:
             source1, source2 = tuple(self.config["data"].keys())
-            source1_metrics = list(self.config["data"][source1]["metrics"].keys())
-            source2_metrics = list(self.config["data"][source2]["metrics"].keys())
+            source1_metrics = list(
+                self.config["data"][source1]["metrics"].keys())
+            source2_metrics = list(
+                self.config["data"][source2]["metrics"].keys())
             # Look for same metrics in both sources
             # I know that it could be done in O(n), this is more readable
-            shared_metrics = sorted(set(source1_metrics) & set(source2_metrics))
+            shared_metrics = sorted(
+                set(source1_metrics) & set(source2_metrics))
             for metric in shared_metrics:
                 try:
-                    joined = joined.withColumn("delta_" + metric, F.abs(F.col(source1 + "_" + metric) - F.col(source2 + "_" + metric)))
-                except: # Cannot calculate difference, eg in case the metric is string
+                    joined = joined.withColumn(
+                        "delta_" + metric,
+                        F.abs(
+                            F.col(source1 + "_" + metric) -
+                            F.col(source2 + "_" + metric)))
+                except:  # Cannot calculate difference, eg in case the metric is string
                     pass
                 # For float and double type, the acceptance rate is 0.1 percent
-                if dict(joined)[source1 + "_" + metric] in ("float", "double") or dict(joined)[source2 + "_" + metric] in ("float", "double"):
+                if dict(joined)[source1 + "_" + metric] in (
+                        "float",
+                        "double") or dict(joined)[source2 + "_" + metric] in (
+                            "float", "double"):
+
                     def differnece(number1, number2, error=1e-3):
-                        return (number1 - number2)/number2 < error
-                    joined = joined.withColumn("match_" + metric, F.udf(difference, T.BooleanType())(F.col(source1 + "_" + metric), F.col(source2 + "_" + metric)))
+                        return (number1 - number2) / number2 < error
+
+                    joined = joined.withColumn(
+                        "match_" + metric,
+                        F.udf(difference,
+                              T.BooleanType())(F.col(source1 + "_" + metric),
+                                               F.col(source2 + "_" + metric)))
                 else:
-                    joined = joined.withColumn("match_" + metric, F.col(source1 + "_" + metric) == F.col(source2 + "_" + metric))
+                    joined = joined.withColumn(
+                        "match_" + metric,
+                        F.col(source1 + "_" + metric) == F.col(source2 + "_" +
+                                                               metric))
         self.joined = joined
         return joined
 
