@@ -166,10 +166,8 @@ class ReconJob:
                 except:  # Cannot calculate difference, eg in case the metric is string
                     pass
                 # For float and double type, the acceptance rate is 0.1 percent
-                if dict(joined)[source1 + "_" + metric] in (
-                        "float",
-                        "double") or dict(joined)[source2 + "_" + metric] in (
-                            "float", "double"):
+                if dict(joined.dtypes)[source1 + "_" + metric] in ("float", "double") \
+                    or dict(joined.dtypes)[source2 + "_" + metric] in ("float", "double"):
 
                     def differnece(number1, number2, error=1e-3):
                         return (number1 - number2) / number2 < error
