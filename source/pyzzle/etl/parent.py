@@ -126,36 +126,6 @@ class BaseETLJob:
     def __repr__(self):
         return str(self.config)
 
-    # Script executor
-    ## Use sparksession sql directly, this is not needed
-    # def sql(self, script):
-    #     '''Executes an sql-script from databricks' sparksession.
-
-    #     Execute an sql-script from spark session. Users are responsible to validate this script.
-    #     If a multi-statement script is provided, it would be split into atomic scripts by semicolon (;) and these would be executed sequently.
-
-    #     Args:
-    #         script: the sql-script
-
-    #     Returns:
-    #         A SparkDataframe which is the result of the script. If script is multi-statement, return the result of lastest atomic sub-script.
-    #         Return None if empty script is provided.
-
-    #     '''
-
-    #     # Users are responsible to validate the script
-    #     script = script.replace("\n", " ")
-    #     if script.replace(" ", "") == "":
-    #         return None
-    #     if ";" not in script:
-    #         return self.spark.sql(script)
-    #     else:
-    #         # If a multi-statement script is provided, return the result of last statement.
-    #         statements = filter(lambda x: x != "",
-    #                             map(lambda x: x.strip(), script.split(";")))
-
-    #         return list(map(lambda x: self.spark.sql(x), statements))[-1]
-
     def step_01_source_pre_sql(self):
         '''Executes job source side pre-sql
         
@@ -168,39 +138,6 @@ class BaseETLJob:
             return self.from_datasource.sql(self.config["source"]["pre_sql"])
         else:
             return None
-
-    # # Removed this step since the work could be done in pre-sql
-    # def step_02_create_reference_views(self):
-    #     ''' Creates temp views related to reference table paths from source config
-
-    #     If reference_table_path is provided from job's source side, they're be created as temporary views IN SPARK SESSION.
-    #     This step is only available with delta datasource.
-
-    #     Returns: dictionary of (view_name: view_dataframe)
-    #     '''
-    #     def create_view_ddl(args):
-    #         view_name, path = args
-    #         return "CREATE OR REPLACE TEMPORARY VIEW {} AS SELECT * FROM delta.`{}`;".format(
-    #             view_name, path)
-
-    #     if "reference_table_path" not in self.config["source"]:
-    #         script = ""
-    #     else:
-    #         if isinstance(self.config["source"]["reference_table_path"], list):
-    #             r = dict()
-    #             for subdict in self.config["source"]["reference_table_path"]:
-    #                 r = {**r, **subdict}
-    #             self.config["source"]["reference_table_path"] = r
-
-    #         script = ";\n".join(
-    #             map(create_view_ddl,
-    #                 self.config["source"]["reference_table_path"].items()))
-
-    #     # TODO: Modify this so it shall support other sources
-    #     if generate_sql:
-    #         return script
-    #     else:
-    #         return self.execute_sql(script)
 
     def step_03_create_source_view(self):
         ''' Creates temp view represents the source query.
