@@ -43,10 +43,10 @@ def init_recon_job(config_yaml_filepath: str, params: dict = {}):
     for key in list(config.keys()):
         config[key.lower()] = config[key]
 
-    return BaseReconJob(config)
+    return ReconJob(config)
 
 
-class BaseReconJob:
+class ReconJob:
     def __init__(self, config_dict: dict, params: dict = dict()):
         # TODO:
         # - Validate config
