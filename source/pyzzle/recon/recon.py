@@ -112,7 +112,7 @@ class ReconJob:
         # - Add a new attribute to current job self.agg["name"] = aggregated dataframe
         self.agg = dict()
 
-        for name, config in self.config["data"]:
+        for name, config in self.config["data"].items():
             group_by = self.config["group_by"]
             agg = self.df[name].groupBy(*group_by)
 
